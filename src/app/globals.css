@@ -1,6 +1,21 @@
 @import "tailwindcss";
 
 :root {
+  /* The Engine brand colors - MIT-inspired black/white palette */
+  --engine-black: #000000;
+  --engine-white: #ffffff;
+  --engine-gray-50: #fafafa;
+  --engine-gray-100: #f5f5f5;
+  --engine-gray-200: #e5e5e5;
+  --engine-gray-300: #d4d4d4;
+  --engine-gray-400: #a3a3a3;
+  --engine-gray-500: #737373;
+  --engine-gray-600: #525252;
+  --engine-gray-700: #404040;
+  --engine-gray-800: #262626;
+  --engine-gray-900: #171717;
+  --engine-accent: #e31837; /* The Engine red accent */
+
   --background: #ffffff;
   --foreground: #171717;
 }
@@ -12,15 +27,31 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* Slow spinning animation for The Engine gear icon */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+/* Tough Tech gradient button */
+.tough-tech-gradient {
+  background: linear-gradient(90deg, #7FD97F 0%, #E8E855 50%, #F5A672 100%);
+}
+
+.tough-tech-gradient:hover {
+  background: linear-gradient(90deg, #6BC96B 0%, #D4D445 50%, #E59562 100%);
 }
