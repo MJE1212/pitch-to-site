@@ -18,13 +18,13 @@ export async function POST(request: NextRequest) {
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const pdfText = await parsePDF(buffer);
 
-    if (!pdfText.trim()) {
-      return NextResponse.json(
-        { error: 'Could not extract text from PDF. The file may be image-based.' },
-        { status: 400 }
-      );
+    // Try text extraction first
+    let pdfText = '';
+    try {
+      pdfText = await parsePDF(buffer);
+    } catch {
+      // Text extraction failed, will use vision
     }
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         analysis: {
           elements: {
-            companyName: { status: 'present', content: pdfText.split('\n')[0]?.trim() || 'Company Name' },
+            companyName: { status: 'present', content: 'Demo Company' },
             tagline: { status: 'partial', content: 'Extracted from deck' },
             problemStatement: { status: 'present', content: 'Problem identified in deck' },
             solutionDescription: { status: 'present', content: 'Solution described in deck' },
@@ -45,25 +45,64 @@ export async function POST(request: NextRequest) {
             currentStatus: { status: 'missing', content: null },
             contactInfo: { status: 'partial', content: null },
           },
-          rawText: pdfText,
+          rawText: pdfText || 'Image-based PDF - analyzed via vision',
         },
         demoMode: true,
       });
     }
 
     const client = new Anthropic({ apiKey });
-    const message = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2048,
-      messages: [
-        {
-          role: 'user',
-          content: DECK_ANALYSIS_PROMPT + pdfText.slice(0, 20000),
-        },
-      ],
-    });
+    let responseText: string;
 
-    const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+    // If we have substantial text, use text-based analysis
+    const hasSubstantialText = pdfText.trim().length > 200;
+
+    if (hasSubstantialText) {
+      // Text-based analysis
+      const message = await client.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2048,
+        messages: [
+          {
+            role: 'user',
+            content: DECK_ANALYSIS_PROMPT + pdfText.slice(0, 20000),
+          },
+        ],
+      });
+      responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+    } else {
+      // Vision-based analysis - send PDF as document
+      console.log('Using document-based analysis for image PDF');
+
+      const pdfBase64 = buffer.toString('base64');
+
+      const message = await client.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2048,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'document',
+                source: {
+                  type: 'base64',
+                  media_type: 'application/pdf',
+                  data: pdfBase64,
+                },
+              },
+              {
+                type: 'text',
+                text: DECK_ANALYSIS_PROMPT,
+              },
+            ],
+          },
+        ],
+      });
+      responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+      pdfText = '[Image-based PDF - analyzed via Claude Vision]';
+    }
+
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
 
     if (!jsonMatch) {
