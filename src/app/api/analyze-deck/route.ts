@@ -3,6 +3,15 @@ import { parsePDF } from '@/lib/pdf-parser';
 import Anthropic from '@anthropic-ai/sdk';
 import { DECK_ANALYSIS_PROMPT } from '@/lib/ai-prompts';
 
+// Allow larger file uploads (50MB)
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '50mb',
+    },
+  },
+};
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();

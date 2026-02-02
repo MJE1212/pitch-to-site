@@ -14,8 +14,8 @@ export default function Step1AnalyzeDeck() {
     if (acceptedFiles.length === 0) return;
 
     const file = acceptedFiles[0];
-    if (file.size > 10 * 1024 * 1024) {
-      setError('File size must be under 10MB.');
+    if (file.size > 50 * 1024 * 1024) {
+      setError('File size must be under 50MB.');
       return;
     }
 
@@ -116,7 +116,7 @@ export default function Step1AnalyzeDeck() {
                 <p className="text-neutral-700 mb-2">
                   <span className="text-[#e31837] font-medium">Click to upload</span> or drag and drop
                 </p>
-                <p className="text-neutral-500 text-sm">PDF files only (max 10MB)</p>
+                <p className="text-neutral-500 text-sm">PDF files only (max 50MB)</p>
               </div>
             )}
           </div>

@@ -22,8 +22,8 @@ export default function FileUpload({ onFileAccepted, isProcessing = false }: Fil
 
       if (acceptedFiles.length > 0) {
         const file = acceptedFiles[0];
-        if (file.size > 10 * 1024 * 1024) {
-          setError('File size must be under 10MB.');
+        if (file.size > 50 * 1024 * 1024) {
+          setError('File size must be under 50MB.');
           return;
         }
         onFileAccepted(file);
@@ -93,7 +93,7 @@ export default function FileUpload({ onFileAccepted, isProcessing = false }: Fil
             <p className="text-slate-300 mb-2">
               <span className="text-blue-400 font-medium">Click to upload</span> or drag and drop
             </p>
-            <p className="text-slate-500 text-sm">PDF files only (max 10MB)</p>
+            <p className="text-slate-500 text-sm">PDF files only (max 50MB)</p>
           </div>
         )}
       </div>
