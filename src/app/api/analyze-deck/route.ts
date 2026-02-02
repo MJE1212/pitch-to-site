@@ -72,35 +72,42 @@ export async function POST(request: NextRequest) {
       responseText = message.content[0].type === 'text' ? message.content[0].text : '';
     } else {
       // Vision-based analysis - send PDF as document
-      console.log('Using document-based analysis for image PDF');
+      console.log('Using document-based analysis for image PDF, size:', buffer.length);
 
       const pdfBase64 = buffer.toString('base64');
 
-      const message = await client.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2048,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'document',
-                source: {
-                  type: 'base64',
-                  media_type: 'application/pdf',
-                  data: pdfBase64,
+      try {
+        const message = await client.messages.create({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 2048,
+          betas: ['pdfs-2024-09-25'],
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'document',
+                  source: {
+                    type: 'base64',
+                    media_type: 'application/pdf',
+                    data: pdfBase64,
+                  },
                 },
-              },
-              {
-                type: 'text',
-                text: DECK_ANALYSIS_PROMPT,
-              },
-            ],
-          },
-        ],
-      });
-      responseText = message.content[0].type === 'text' ? message.content[0].text : '';
-      pdfText = '[Image-based PDF - analyzed via Claude Vision]';
+                {
+                  type: 'text',
+                  text: DECK_ANALYSIS_PROMPT,
+                },
+              ],
+            },
+          ],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any);
+        responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+        pdfText = '[Image-based PDF - analyzed via Claude Vision]';
+      } catch (visionError) {
+        console.error('Vision analysis failed:', visionError);
+        throw new Error('Could not analyze this PDF. It may be too large or in an unsupported format. Please try a smaller file or a text-based PDF.');
+      }
     }
 
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);

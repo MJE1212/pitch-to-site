@@ -31,14 +31,23 @@ export default function Step1AnalyzeDeck() {
         body: formData,
       });
 
+      const responseText = await response.text();
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        console.error('Failed to parse response:', responseText.slice(0, 500));
+        throw new Error('Server returned an invalid response. Please try again.');
+      }
+
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.error || 'Failed to analyze deck');
       }
 
-      const data = await response.json();
       updateProject({ deckAnalysis: data.analysis });
     } catch (err) {
+      console.error('Analyze deck error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsProcessing(false);
