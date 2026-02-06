@@ -108,36 +108,6 @@ export default function Step6DesignDirection() {
           </p>
         </div>
 
-        {/* Reference Sites */}
-        <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-6">
-          <h2 className="text-lg font-semibold text-black mb-3">Tough Tech Reference Sites</h2>
-          <p className="text-sm text-neutral-500 mb-4">
-            These sites embody the professional, credible aesthetic that works for science-driven startups:
-          </p>
-          <div className="grid md:grid-cols-2 gap-2 text-sm">
-            {[
-              'coperniccatalysts.com',
-              'reynko.com',
-              'quantumformatics.com',
-              'rockzero.com',
-              'robigo.bio',
-              'dropletbiosci.com',
-              'anthology.bio',
-              'foraybio.com',
-            ].map((site) => (
-              <a
-                key={site}
-                href={`https://${site}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#e31837] hover:text-[#c41530]"
-              >
-                {site} ↗
-              </a>
-            ))}
-          </div>
-        </div>
-
         <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-8 text-center">
           <button
             onClick={generateDesign}
@@ -320,42 +290,173 @@ export default function Step6DesignDirection() {
           <div>
             <p className="text-sm text-neutral-500 mb-2">Heading Font</p>
             {editingTypography ? (
-              <select
-                value={design?.typography.headingFont}
-                onChange={(e) => updateTypography('headingFont', e.target.value)}
-                className="w-full px-4 py-2 bg-white border border-neutral-300 rounded-lg text-black"
-              >
-                {['Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Poppins', 'Source Sans Pro', 'Work Sans', 'DM Sans', 'Plus Jakarta Sans'].map(font => (
-                  <option key={font} value={font}>{font}</option>
-                ))}
-              </select>
+              <>
+                <select
+                  value={design?.typography.customHeadingFont ? 'custom' : design?.typography.headingFont}
+                  onChange={(e) => {
+                    if (e.target.value === 'custom') {
+                      // Will be handled by the text input
+                    } else {
+                      updateTypography('headingFont', e.target.value);
+                      if (design) {
+                        setDesign({ ...design, typography: { ...design.typography, customHeadingFont: undefined } });
+                      }
+                    }
+                  }}
+                  className="w-full px-4 py-2 bg-white border border-neutral-300 rounded-lg text-black"
+                >
+                  {['Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Poppins', 'Source Sans Pro', 'Work Sans', 'DM Sans', 'Plus Jakarta Sans'].map(font => (
+                    <option key={font} value={font}>{font}</option>
+                  ))}
+                  <option value="custom">Custom font...</option>
+                </select>
+                {(design?.typography.customHeadingFont || design?.typography.headingFont === 'custom') && (
+                  <input
+                    type="text"
+                    placeholder="Enter custom font name"
+                    value={design?.typography.customHeadingFont || ''}
+                    onChange={(e) => {
+                      if (design) {
+                        setDesign({
+                          ...design,
+                          typography: {
+                            ...design.typography,
+                            headingFont: e.target.value || 'Inter',
+                            customHeadingFont: e.target.value,
+                          },
+                        });
+                      }
+                    }}
+                    className="w-full px-4 py-2 mt-2 bg-white border border-neutral-300 rounded-lg text-black"
+                  />
+                )}
+              </>
             ) : (
-              <p className="text-black font-medium text-lg">{design?.typography.headingFont}</p>
+              <p className="text-black font-medium text-lg">{design?.typography.customHeadingFont || design?.typography.headingFont}</p>
             )}
-            <p className="text-2xl font-bold text-black mt-2" style={{ fontFamily: design?.typography.headingFont }}>
+            <p className="text-2xl font-bold text-black mt-2" style={{ fontFamily: design?.typography.customHeadingFont || design?.typography.headingFont }}>
               Sample Heading
             </p>
           </div>
           <div>
             <p className="text-sm text-neutral-500 mb-2">Body Font</p>
             {editingTypography ? (
-              <select
-                value={design?.typography.bodyFont}
-                onChange={(e) => updateTypography('bodyFont', e.target.value)}
-                className="w-full px-4 py-2 bg-white border border-neutral-300 rounded-lg text-black"
-              >
-                {['Inter', 'Roboto', 'Open Sans', 'Lato', 'Source Sans Pro', 'Work Sans', 'DM Sans', 'IBM Plex Sans', 'Nunito Sans', 'Karla'].map(font => (
-                  <option key={font} value={font}>{font}</option>
-                ))}
-              </select>
+              <>
+                <select
+                  value={design?.typography.customBodyFont ? 'custom' : design?.typography.bodyFont}
+                  onChange={(e) => {
+                    if (e.target.value === 'custom') {
+                      // Will be handled by the text input
+                    } else {
+                      updateTypography('bodyFont', e.target.value);
+                      if (design) {
+                        setDesign({ ...design, typography: { ...design.typography, customBodyFont: undefined } });
+                      }
+                    }
+                  }}
+                  className="w-full px-4 py-2 bg-white border border-neutral-300 rounded-lg text-black"
+                >
+                  {['Inter', 'Roboto', 'Open Sans', 'Lato', 'Source Sans Pro', 'Work Sans', 'DM Sans', 'IBM Plex Sans', 'Nunito Sans', 'Karla'].map(font => (
+                    <option key={font} value={font}>{font}</option>
+                  ))}
+                  <option value="custom">Custom font...</option>
+                </select>
+                {(design?.typography.customBodyFont || design?.typography.bodyFont === 'custom') && (
+                  <input
+                    type="text"
+                    placeholder="Enter custom font name"
+                    value={design?.typography.customBodyFont || ''}
+                    onChange={(e) => {
+                      if (design) {
+                        setDesign({
+                          ...design,
+                          typography: {
+                            ...design.typography,
+                            bodyFont: e.target.value || 'Inter',
+                            customBodyFont: e.target.value,
+                          },
+                        });
+                      }
+                    }}
+                    className="w-full px-4 py-2 mt-2 bg-white border border-neutral-300 rounded-lg text-black"
+                  />
+                )}
+              </>
             ) : (
-              <p className="text-black font-medium text-lg">{design?.typography.bodyFont}</p>
+              <p className="text-black font-medium text-lg">{design?.typography.customBodyFont || design?.typography.bodyFont}</p>
             )}
-            <p className="text-neutral-600 mt-2" style={{ fontFamily: design?.typography.bodyFont }}>
+            <p className="text-neutral-600 mt-2" style={{ fontFamily: design?.typography.customBodyFont || design?.typography.bodyFont }}>
               This is sample body text showing how paragraphs will look on your website.
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Logo Upload */}
+      <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-6">
+        <h2 className="text-lg font-semibold text-black mb-4">Logo</h2>
+        {design?.logo ? (
+          <div className="flex items-center gap-4">
+            <div className="w-24 h-24 bg-white rounded-lg border border-neutral-200 flex items-center justify-center p-2">
+              <img
+                src={design.logo.dataUrl}
+                alt="Uploaded logo"
+                className="max-w-full max-h-full object-contain"
+              />
+            </div>
+            <div>
+              <p className="text-black font-medium">{design.logo.fileName}</p>
+              <button
+                onClick={() => {
+                  if (design) {
+                    setDesign({ ...design, logo: undefined });
+                  }
+                }}
+                className="text-sm text-red-600 hover:text-red-700 mt-1"
+              >
+                Remove logo
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file && design) {
+                  const reader = new FileReader();
+                  reader.onload = (event) => {
+                    const dataUrl = event.target?.result as string;
+                    setDesign({
+                      ...design,
+                      logo: {
+                        fileName: file.name,
+                        dataUrl,
+                      },
+                    });
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+              className="hidden"
+              id="logo-upload"
+            />
+            <label
+              htmlFor="logo-upload"
+              className="cursor-pointer"
+            >
+              <svg className="w-12 h-12 text-neutral-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <p className="text-neutral-600 mb-1">
+                <span className="text-[#e31837] font-medium">Click to upload</span> your logo
+              </p>
+              <p className="text-neutral-500 text-sm">PNG, JPG, or SVG (recommended)</p>
+            </label>
+          </div>
+        )}
       </div>
 
       {/* Imagery Style */}
@@ -375,24 +476,6 @@ export default function Step6DesignDirection() {
             </li>
           ))}
         </ul>
-      </div>
-
-      {/* Reference Websites */}
-      <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-6">
-        <h2 className="text-lg font-semibold text-black mb-3">Reference Websites</h2>
-        <div className="space-y-2">
-          {design?.referenceWebsites.map((site, index) => (
-            <a
-              key={index}
-              href={site.startsWith('http') ? site : `https://${site}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block text-[#e31837] hover:text-[#c41530]"
-            >
-              {site} ↗
-            </a>
-          ))}
-        </div>
       </div>
 
       {/* Trust Signals */}

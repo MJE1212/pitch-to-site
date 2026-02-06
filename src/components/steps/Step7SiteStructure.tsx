@@ -10,34 +10,54 @@ export default function Step7SiteStructure() {
   const [structure, setStructure] = useState<SiteStructure>(
     project.siteStructure || {
       type: 'single-page',
-      sections: ['Home', 'About', 'Technology', 'Team', 'Contact'],
-      navigationItems: ['About', 'Technology', 'Team', 'Contact Us'],
+      sections: ['Home', 'Technology/Science', 'About/Company', 'Contact'],
+      navigationItems: ['Technology', 'About', 'Contact'],
       footerItems: ['Privacy Policy', 'LinkedIn', 'Email'],
       contentToCut: [],
     }
   );
 
-  const defaultSections = [
-    'Home',
-    'About',
-    'Technology / Science',
-    'How It Works',
-    'Team',
-    'Careers / Join Us',
-    'News / Updates',
-    'Partners',
-    'Contact',
-  ];
+  // Subsection options for each main section
+  const [subsections, setSubsections] = useState<Record<string, string[]>>({
+    'Technology/Science': project.siteStructure?.sections.includes('How It Works') ? ['How It Works'] : [],
+    'About/Company': [
+      ...(project.siteStructure?.sections.includes('Team') ? ['Team'] : []),
+      ...(project.siteStructure?.sections.includes('Careers') ? ['Careers'] : []),
+    ],
+  });
 
-  const toggleSection = (section: string) => {
-    const sections = structure.sections.includes(section)
-      ? structure.sections.filter((s) => s !== section)
-      : [...structure.sections, section];
-    setStructure({ ...structure, sections });
+  const mainSections = ['Home', 'Technology/Science', 'About/Company', 'Contact'];
+
+  const subsectionOptions: Record<string, string[]> = {
+    'Technology/Science': ['How It Works'],
+    'About/Company': ['Team', 'Careers'],
+  };
+
+  const toggleSubsection = (parentSection: string, subsection: string) => {
+    const current = subsections[parentSection] || [];
+    const updated = current.includes(subsection)
+      ? current.filter((s) => s !== subsection)
+      : [...current, subsection];
+    setSubsections({ ...subsections, [parentSection]: updated });
   };
 
   const handleContinue = () => {
-    updateProject({ siteStructure: structure });
+    // Build full sections list including subsections
+    const allSections = [...mainSections];
+    Object.entries(subsections).forEach(([, subs]) => {
+      subs.forEach((sub) => {
+        if (!allSections.includes(sub)) {
+          allSections.push(sub);
+        }
+      });
+    });
+
+    updateProject({
+      siteStructure: {
+        ...structure,
+        sections: allSections,
+      },
+    });
     nextStep();
   };
 
@@ -83,52 +103,64 @@ export default function Step7SiteStructure() {
         </div>
       </div>
 
-      {/* Sections */}
+      {/* Sections Included */}
       <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-6">
-        <h2 className="text-lg font-semibold text-black mb-2">Sections to Include</h2>
-        <p className="text-sm text-neutral-500 mb-4">
-          Select the sections you want on your site. Recommended order: Home - About - Technology - Team - Contact
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {defaultSections.map((section) => (
-            <button
+        <h2 className="text-lg font-semibold text-black mb-4">Sections Included</h2>
+        <div className="flex flex-wrap gap-2 mb-6">
+          {mainSections.map((section) => (
+            <span
               key={section}
-              onClick={() => toggleSection(section)}
-              className={`px-4 py-2 rounded-lg border transition-all ${
-                structure.sections.includes(section)
-                  ? 'border-black bg-black text-white'
-                  : 'border-neutral-300 text-neutral-600 hover:border-neutral-400 bg-white'
-              }`}
+              className="px-4 py-2 rounded-lg border border-black bg-black text-white"
             >
               {section}
-            </button>
+            </span>
           ))}
         </div>
-        {structure.sections.length > 0 && (
-          <p className="mt-4 text-sm text-neutral-500">
-            Selected order: {structure.sections.join(' - ')}
-          </p>
-        )}
-      </div>
 
-      {/* Navigation */}
-      <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-6">
-        <h2 className="text-lg font-semibold text-black mb-2">Header Navigation</h2>
-        <p className="text-sm text-neutral-500 mb-4">
-          Items that will appear in the main navigation. Keep it simple (4-5 items max).
-        </p>
-        <input
-          type="text"
-          value={structure.navigationItems.join(', ')}
-          onChange={(e) =>
-            setStructure({
-              ...structure,
-              navigationItems: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
-            })
-          }
-          placeholder="About, Technology, Team, Contact Us"
-          className="w-full px-4 py-2 bg-white border border-neutral-300 rounded-lg text-black focus:border-black focus:ring-1 focus:ring-black outline-none"
-        />
+        {/* Subsection Options */}
+        <div className="space-y-4 mt-6 pt-6 border-t border-neutral-200">
+          <p className="text-sm text-neutral-600 font-medium">Optional subsections:</p>
+
+          {/* Technology/Science subsections */}
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-neutral-500 w-36">Technology/Science:</span>
+            <div className="flex flex-wrap gap-2">
+              {subsectionOptions['Technology/Science'].map((sub) => (
+                <button
+                  key={sub}
+                  onClick={() => toggleSubsection('Technology/Science', sub)}
+                  className={`px-3 py-1 text-sm rounded-lg border transition-all ${
+                    subsections['Technology/Science']?.includes(sub)
+                      ? 'border-black bg-black text-white'
+                      : 'border-neutral-300 text-neutral-600 hover:border-neutral-400 bg-white'
+                  }`}
+                >
+                  {sub}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* About/Company subsections */}
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-neutral-500 w-36">About/Company:</span>
+            <div className="flex flex-wrap gap-2">
+              {subsectionOptions['About/Company'].map((sub) => (
+                <button
+                  key={sub}
+                  onClick={() => toggleSubsection('About/Company', sub)}
+                  className={`px-3 py-1 text-sm rounded-lg border transition-all ${
+                    subsections['About/Company']?.includes(sub)
+                      ? 'border-black bg-black text-white'
+                      : 'border-neutral-300 text-neutral-600 hover:border-neutral-400 bg-white'
+                  }`}
+                >
+                  {sub}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Footer */}

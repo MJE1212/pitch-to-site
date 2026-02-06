@@ -90,6 +90,12 @@ export interface DesignDirection {
   typography: {
     headingFont: string;
     bodyFont: string;
+    customHeadingFont?: string; // Custom uploaded font name
+    customBodyFont?: string; // Custom uploaded font name
+  };
+  logo?: {
+    fileName: string;
+    dataUrl: string; // Base64 data URL for the logo
   };
   imageryStyle: string;
   avoidList: string[];
