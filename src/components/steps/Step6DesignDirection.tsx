@@ -1,8 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useProject } from '@/lib/ProjectContext';
 import { DesignDirection } from '@/lib/types';
+
+// Load Google Font dynamically
+function loadGoogleFont(fontName: string) {
+  const link = document.getElementById(`google-font-${fontName.replace(/\s+/g, '-')}`);
+  if (!link && fontName && !fontName.startsWith('custom-')) {
+    const newLink = document.createElement('link');
+    newLink.id = `google-font-${fontName.replace(/\s+/g, '-')}`;
+    newLink.rel = 'stylesheet';
+    newLink.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}:wght@400;700&display=swap`;
+    document.head.appendChild(newLink);
+  }
+}
 
 // Simple color box using inline style with !important via style attribute
 function ColorBox({ color, label }: { color: string; label: string }) {
@@ -33,6 +45,18 @@ export default function Step6DesignDirection() {
   const [error, setError] = useState<string | null>(null);
   const [editingColors, setEditingColors] = useState(false);
   const [editingTypography, setEditingTypography] = useState(false);
+  const [useCustomHeadingFont, setUseCustomHeadingFont] = useState(!!project.designDirection?.typography?.customHeadingFont);
+  const [useCustomBodyFont, setUseCustomBodyFont] = useState(!!project.designDirection?.typography?.customBodyFont);
+
+  // Load Google Fonts when fonts change
+  useEffect(() => {
+    if (design?.typography?.headingFont && !useCustomHeadingFont) {
+      loadGoogleFont(design.typography.headingFont);
+    }
+    if (design?.typography?.bodyFont && !useCustomBodyFont) {
+      loadGoogleFont(design.typography.bodyFont);
+    }
+  }, [design?.typography?.headingFont, design?.typography?.bodyFont, useCustomHeadingFont, useCustomBodyFont]);
 
   const generateDesign = async () => {
     setIsGenerating(true);
@@ -290,106 +314,144 @@ export default function Step6DesignDirection() {
           <div>
             <p className="text-sm text-neutral-500 mb-2">Heading Font</p>
             {editingTypography ? (
-              <>
-                <select
-                  value={design?.typography.customHeadingFont ? 'custom' : design?.typography.headingFont}
-                  onChange={(e) => {
-                    if (e.target.value === 'custom') {
-                      // Will be handled by the text input
-                    } else {
-                      updateTypography('headingFont', e.target.value);
-                      if (design) {
-                        setDesign({ ...design, typography: { ...design.typography, customHeadingFont: undefined } });
-                      }
+              <select
+                value={useCustomHeadingFont ? 'custom' : design?.typography.headingFont}
+                onChange={(e) => {
+                  if (e.target.value === 'custom') {
+                    setUseCustomHeadingFont(true);
+                  } else {
+                    setUseCustomHeadingFont(false);
+                    updateTypography('headingFont', e.target.value);
+                    if (design) {
+                      setDesign({ ...design, typography: { ...design.typography, customHeadingFont: undefined } });
                     }
-                  }}
-                  className="w-full px-4 py-2 bg-white border border-neutral-300 rounded-lg text-black"
-                >
-                  {['Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Poppins', 'Source Sans Pro', 'Work Sans', 'DM Sans', 'Plus Jakarta Sans'].map(font => (
-                    <option key={font} value={font}>{font}</option>
-                  ))}
-                  <option value="custom">Custom font...</option>
-                </select>
-                {(design?.typography.customHeadingFont || design?.typography.headingFont === 'custom') && (
-                  <input
-                    type="text"
-                    placeholder="Enter custom font name"
-                    value={design?.typography.customHeadingFont || ''}
-                    onChange={(e) => {
-                      if (design) {
-                        setDesign({
-                          ...design,
-                          typography: {
-                            ...design.typography,
-                            headingFont: e.target.value || 'Inter',
-                            customHeadingFont: e.target.value,
-                          },
-                        });
-                      }
-                    }}
-                    className="w-full px-4 py-2 mt-2 bg-white border border-neutral-300 rounded-lg text-black"
-                  />
-                )}
-              </>
+                  }
+                }}
+                className="w-full px-4 py-2 bg-white border border-neutral-300 rounded-lg text-black"
+              >
+                {['Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Poppins', 'Source Sans Pro', 'Work Sans', 'DM Sans', 'Plus Jakarta Sans'].map(font => (
+                  <option key={font} value={font}>{font}</option>
+                ))}
+                <option value="custom">Custom font...</option>
+              </select>
             ) : (
               <p className="text-black font-medium text-lg">{design?.typography.customHeadingFont || design?.typography.headingFont}</p>
             )}
-            <p className="text-2xl font-bold text-black mt-2" style={{ fontFamily: design?.typography.customHeadingFont || design?.typography.headingFont }}>
+            <p
+              className="text-2xl font-bold text-black mt-2"
+              style={{ fontFamily: `"${design?.typography.customHeadingFont || design?.typography.headingFont}", sans-serif` }}
+            >
               Sample Heading
             </p>
           </div>
           <div>
             <p className="text-sm text-neutral-500 mb-2">Body Font</p>
             {editingTypography ? (
-              <>
-                <select
-                  value={design?.typography.customBodyFont ? 'custom' : design?.typography.bodyFont}
-                  onChange={(e) => {
-                    if (e.target.value === 'custom') {
-                      // Will be handled by the text input
-                    } else {
-                      updateTypography('bodyFont', e.target.value);
-                      if (design) {
-                        setDesign({ ...design, typography: { ...design.typography, customBodyFont: undefined } });
-                      }
+              <select
+                value={useCustomBodyFont ? 'custom' : design?.typography.bodyFont}
+                onChange={(e) => {
+                  if (e.target.value === 'custom') {
+                    setUseCustomBodyFont(true);
+                  } else {
+                    setUseCustomBodyFont(false);
+                    updateTypography('bodyFont', e.target.value);
+                    if (design) {
+                      setDesign({ ...design, typography: { ...design.typography, customBodyFont: undefined } });
                     }
-                  }}
-                  className="w-full px-4 py-2 bg-white border border-neutral-300 rounded-lg text-black"
-                >
-                  {['Inter', 'Roboto', 'Open Sans', 'Lato', 'Source Sans Pro', 'Work Sans', 'DM Sans', 'IBM Plex Sans', 'Nunito Sans', 'Karla'].map(font => (
-                    <option key={font} value={font}>{font}</option>
-                  ))}
-                  <option value="custom">Custom font...</option>
-                </select>
-                {(design?.typography.customBodyFont || design?.typography.bodyFont === 'custom') && (
-                  <input
-                    type="text"
-                    placeholder="Enter custom font name"
-                    value={design?.typography.customBodyFont || ''}
-                    onChange={(e) => {
-                      if (design) {
-                        setDesign({
-                          ...design,
-                          typography: {
-                            ...design.typography,
-                            bodyFont: e.target.value || 'Inter',
-                            customBodyFont: e.target.value,
-                          },
-                        });
-                      }
-                    }}
-                    className="w-full px-4 py-2 mt-2 bg-white border border-neutral-300 rounded-lg text-black"
-                  />
-                )}
-              </>
+                  }
+                }}
+                className="w-full px-4 py-2 bg-white border border-neutral-300 rounded-lg text-black"
+              >
+                {['Inter', 'Roboto', 'Open Sans', 'Lato', 'Source Sans Pro', 'Work Sans', 'DM Sans', 'IBM Plex Sans', 'Nunito Sans', 'Karla'].map(font => (
+                  <option key={font} value={font}>{font}</option>
+                ))}
+                <option value="custom">Custom font...</option>
+              </select>
             ) : (
               <p className="text-black font-medium text-lg">{design?.typography.customBodyFont || design?.typography.bodyFont}</p>
             )}
-            <p className="text-neutral-600 mt-2" style={{ fontFamily: design?.typography.customBodyFont || design?.typography.bodyFont }}>
+            <p
+              className="text-neutral-600 mt-2"
+              style={{ fontFamily: `"${design?.typography.customBodyFont || design?.typography.bodyFont}", sans-serif` }}
+            >
               This is sample body text showing how paragraphs will look on your website.
             </p>
           </div>
         </div>
+
+        {/* Custom Font Upload Section - appears when custom is selected */}
+        {(useCustomHeadingFont || useCustomBodyFont) && editingTypography && (
+          <div className="mt-6 pt-6 border-t border-neutral-200">
+            <h3 className="text-sm font-medium text-black mb-3">Upload Custom Font</h3>
+            <p className="text-sm text-neutral-500 mb-4">
+              Upload your font file (.ttf, .otf, or .woff) or enter the font name if it's available on Google Fonts.
+            </p>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              {useCustomHeadingFont && (
+                <div className="p-4 bg-white rounded-lg border border-neutral-200">
+                  <p className="text-sm font-medium text-black mb-2">Heading Font</p>
+                  <input
+                    type="text"
+                    placeholder="Enter font name (e.g., Playfair Display)"
+                    value={design?.typography.customHeadingFont || ''}
+                    onChange={(e) => {
+                      if (design) {
+                        const fontName = e.target.value;
+                        setDesign({
+                          ...design,
+                          typography: {
+                            ...design.typography,
+                            headingFont: fontName || 'Inter',
+                            customHeadingFont: fontName,
+                          },
+                        });
+                        if (fontName) {
+                          loadGoogleFont(fontName);
+                        }
+                      }
+                    }}
+                    className="w-full px-3 py-2 bg-white border border-neutral-300 rounded-lg text-black text-sm"
+                  />
+                  <p className="text-xs text-neutral-400 mt-2">
+                    Tip: Use a Google Font name for automatic loading
+                  </p>
+                </div>
+              )}
+
+              {useCustomBodyFont && (
+                <div className="p-4 bg-white rounded-lg border border-neutral-200">
+                  <p className="text-sm font-medium text-black mb-2">Body Font</p>
+                  <input
+                    type="text"
+                    placeholder="Enter font name (e.g., Merriweather)"
+                    value={design?.typography.customBodyFont || ''}
+                    onChange={(e) => {
+                      if (design) {
+                        const fontName = e.target.value;
+                        setDesign({
+                          ...design,
+                          typography: {
+                            ...design.typography,
+                            bodyFont: fontName || 'Inter',
+                            customBodyFont: fontName,
+                          },
+                        });
+                        if (fontName) {
+                          loadGoogleFont(fontName);
+                        }
+                      }
+                    }}
+                    className="w-full px-3 py-2 bg-white border border-neutral-300 rounded-lg text-black text-sm"
+                  />
+                  <p className="text-xs text-neutral-400 mt-2">
+                    Tip: Use a Google Font name for automatic loading
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Logo Upload */}
