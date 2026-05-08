@@ -149,7 +149,8 @@ export default function Step2AnalyzeDeck() {
                 <p className="text-neutral-700 mb-2">
                   <span className="text-[#e31837] font-medium">Click to upload</span> or drag and drop
                 </p>
-                <p className="text-neutral-500 text-sm">PDF files only (max 50MB)</p>
+                <p className="text-neutral-500 text-sm">PDF only · Max 50MB</p>
+                <p className="text-neutral-400 text-xs mt-1">Have a PowerPoint or Keynote deck? Use <span className="font-medium">File → Export as PDF</span> first — it preserves all visuals.</p>
               </div>
             )}
           </div>
