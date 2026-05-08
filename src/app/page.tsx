@@ -123,8 +123,19 @@ export default function Home() {
         </div>
 
         {/* Footer */}
-        <footer className="mt-20 text-center text-neutral-400 text-sm">
-          <p>No account required. Your data stays in your browser.</p>
+        <footer className="mt-20 text-center text-neutral-400 text-sm max-w-2xl mx-auto">
+          <p>
+            No account required. Project state stays in your browser; deck and copy content is analyzed via Anthropic&apos;s Claude API, which{' '}
+            <a
+              href="https://www.anthropic.com/legal/commercial-terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-neutral-600"
+            >
+              does not use API submissions to train its models
+            </a>
+            .
+          </p>
         </footer>
       </div>
     </div>
