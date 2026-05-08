@@ -4,16 +4,22 @@ import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useProject } from '@/lib/ProjectContext';
 import { DeckAnalysis } from '@/lib/types';
+import { maybeCompressPDF } from '@/lib/compress-pdf';
+
+// Files larger than this in raw bytes get compressed in-browser before upload.
+// Vercel serverless functions reject bodies larger than ~4.5MB with FUNCTION_PAYLOAD_TOO_LARGE.
+const COMPRESS_TARGET_BYTES = 3 * 1024 * 1024;
 
 export default function Step2AnalyzeDeck() {
   const { project, updateProject, nextStep } = useProject();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [progressMsg, setProgressMsg] = useState<string>('Analyzing your pitch deck...');
   const [error, setError] = useState<string | null>(null);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
 
-    const file = acceptedFiles[0];
+    let file = acceptedFiles[0];
     if (file.size > 50 * 1024 * 1024) {
       setError('File size must be under 50MB.');
       return;
@@ -23,6 +29,24 @@ export default function Step2AnalyzeDeck() {
     setError(null);
 
     try {
+      // Compress in-browser if the deck is large enough to risk Vercel's 4.5MB body limit.
+      if (file.size > COMPRESS_TARGET_BYTES) {
+        setProgressMsg('Compressing PDF for upload…');
+        try {
+          const result = await maybeCompressPDF(file, {
+            onProgress: (msg) => setProgressMsg(msg),
+          });
+          file = result.file;
+        } catch (compressError) {
+          console.error('Deck compression failed:', compressError);
+          throw new Error(
+            'Could not compress this PDF. Try exporting it at lower quality or as a smaller file.'
+          );
+        }
+      }
+
+      setProgressMsg('Analyzing your pitch deck...');
+
       const formData = new FormData();
       formData.append('file', file);
 
@@ -114,8 +138,8 @@ export default function Step2AnalyzeDeck() {
             {isProcessing ? (
               <div className="flex flex-col items-center">
                 <div className="w-12 h-12 border-4 border-[#e31837] border-t-transparent rounded-full animate-spin mb-4" />
-                <p className="text-neutral-700">Analyzing your pitch deck...</p>
-                <p className="text-neutral-500 text-sm mt-2">This may take a moment</p>
+                <p className="text-neutral-700">{progressMsg}</p>
+                <p className="text-neutral-500 text-sm mt-2">Large PDFs are compressed in your browser before upload.</p>
               </div>
             ) : (
               <div className="flex flex-col items-center">
