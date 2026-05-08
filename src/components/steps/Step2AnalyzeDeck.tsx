@@ -9,6 +9,9 @@ import { maybeCompressPDF } from '@/lib/compress-pdf';
 // Files larger than this in raw bytes get compressed in-browser before upload.
 // Vercel serverless functions reject bodies larger than ~4.5MB with FUNCTION_PAYLOAD_TOO_LARGE.
 const COMPRESS_TARGET_BYTES = 3 * 1024 * 1024;
+// Hard ceiling for the post-compression payload. Anything larger gets rejected with a
+// friendly error message before we attempt to upload (and trigger a confusing Vercel error).
+const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 
 export default function Step2AnalyzeDeck() {
   const { project, updateProject, nextStep } = useProject();
@@ -46,6 +49,18 @@ export default function Step2AnalyzeDeck() {
             'Could not compress this PDF. Try exporting it at lower quality or as a smaller file.'
           );
         }
+      }
+
+      // Post-compression size check. Vercel's serverless ingress will reject anything
+      // over ~4.5MB. If we're still that big after compression — usually because the
+      // deck has a lot of pages OR very high-res photos that don't compress well — surface
+      // a clear, actionable error here instead of letting the upload fail with a confusing
+      // network error downstream.
+      if (file.size > MAX_UPLOAD_BYTES) {
+        const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+        throw new Error(
+          `This deck is unusually large even after compression (${sizeMB} MB). Try one of: shorten the deck (remove appendix slides), lower image resolution before re-exporting, or split into a "for-investor" subset.`
+        );
       }
 
       setProgressMsg('Analyzing your pitch deck...');
@@ -153,7 +168,7 @@ export default function Step2AnalyzeDeck() {
                   <span className="text-[#e31837] font-medium">Click to upload</span> or drag and drop
                 </p>
                 <p className="text-neutral-500 text-sm">PDF only · Max 50MB</p>
-                <p className="text-neutral-400 text-xs mt-1">Have a PowerPoint or Keynote deck? Use <span className="font-medium">File → Export as PDF</span> first — it preserves all visuals.</p>
+                <p className="text-neutral-400 text-xs mt-1">Large files are compressed in your browser before upload. PowerPoint or Keynote? Use <span className="font-medium">File → Export as PDF</span> first — it preserves all visuals.</p>
               </div>
             )}
           </div>
