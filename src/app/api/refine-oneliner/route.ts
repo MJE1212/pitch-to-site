@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { CLAUDE_MODEL } from '@/lib/model';
 
+// Short Claude call but bump from 10s default for safety.
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   try {
     const { oneLiner, companyName, problemStatement, solutionDescription } = await request.json();

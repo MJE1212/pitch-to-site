@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { CLAUDE_MODEL } from '@/lib/model';
 
+// Long-form blueprint prompt generation. Bump from 10s default.
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   try {
     const projectData = await request.json();

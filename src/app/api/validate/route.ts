@@ -4,6 +4,9 @@ import { CLAUDE_MODEL } from '@/lib/model';
 import { extractJsonObject } from '@/lib/json-extract';
 import { VALIDATOR_RULES, ValidationResult } from '@/lib/validator-rules';
 
+// 14-rule audit with one Claude call. Bump from 10s default.
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   try {
     const { homepageContent, designDirection, deckAnalysis } = await request.json();

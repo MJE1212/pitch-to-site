@@ -3,6 +3,9 @@ import Anthropic from '@anthropic-ai/sdk';
 import { CLAUDE_MODEL } from '@/lib/model';
 import { extractJsonObject } from '@/lib/json-extract';
 
+// Brand-guide PDF parsing + design generation can take 20–40s. Bump from 10s default.
+export const maxDuration = 60;
+
 // Helper function to extract just the hex code from a string
 function extractHexColor(colorString: string, fallback: string): string {
   if (!colorString) return fallback;

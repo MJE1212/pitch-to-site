@@ -4,6 +4,10 @@ import Anthropic from '@anthropic-ai/sdk';
 import { DECK_ANALYSIS_PROMPT } from '@/lib/ai-prompts';
 import { CLAUDE_MODEL } from '@/lib/model';
 
+// Vision PDF analysis with Claude Opus can take 30–60s on large image-based decks.
+// Vercel's default function timeout is 10s — bump to 60s.
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
