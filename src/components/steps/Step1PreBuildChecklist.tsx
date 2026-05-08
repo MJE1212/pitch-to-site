@@ -50,7 +50,12 @@ const CHECKLIST_ITEMS: ChecklistItem[] = [
   },
   {
     id: 'ai-builder-account',
-    label: '(if you are planning to generate the website yourself) Lovable, Bolt, Figma Make or other AI website builder account',
+    render: () => (
+      <>
+        (if you are planning to generate the website yourself) Lovable, Bolt, Figma Make, or other AI builder —{' '}
+        <span className="font-semibold">plan for a paid tier (~$20/mo)</span> since free credits run out fast when iterating
+      </>
+    ),
   },
 ];
 
