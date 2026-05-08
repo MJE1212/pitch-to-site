@@ -77,20 +77,11 @@ export async function POST(request: NextRequest) {
       });
       responseText = message.content[0].type === 'text' ? message.content[0].text : '';
     } else {
-      // Vision-based analysis - send PDF as document
-      // Vercel has a 4.5MB payload limit, and base64 adds ~33% overhead
-      // So we limit image-based PDFs to 3MB to stay safe
-      const maxImagePdfSize = 3 * 1024 * 1024; // 3MB
-
-      if (buffer.length > maxImagePdfSize) {
-        return NextResponse.json(
-          {
-            error: `This PDF is image-based and too large (${(buffer.length / 1024 / 1024).toFixed(1)}MB). Image-based PDFs must be under 3MB due to processing limits. Please compress your PDF or export it with lower quality settings.`
-          },
-          { status: 400 }
-        );
-      }
-
+      // Vision-based analysis - send PDF as document.
+      // No artificial size cap here: Vercel's serverless ingress already gates
+      // anything over ~4.5MB (returns FUNCTION_PAYLOAD_TOO_LARGE before we run),
+      // and Anthropic's API accepts up to 32MB per request. Client-side
+      // compression in Step 2 keeps most decks well under either limit.
       console.log('Using document-based analysis for image PDF, size:', buffer.length);
 
       const pdfBase64 = buffer.toString('base64');

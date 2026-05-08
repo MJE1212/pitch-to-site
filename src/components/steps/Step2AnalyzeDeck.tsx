@@ -30,10 +30,13 @@ export default function Step2AnalyzeDeck() {
 
     try {
       // Compress in-browser if the deck is large enough to risk Vercel's 4.5MB body limit.
+      // Decks are visually dense — we use a more aggressive JPEG quality (0.6) than the
+      // brand-guide default (0.75) so even image-heavy decks fit comfortably under the limit.
       if (file.size > COMPRESS_TARGET_BYTES) {
         setProgressMsg('Compressing PDF for upload…');
         try {
           const result = await maybeCompressPDF(file, {
+            quality: 0.6,
             onProgress: (msg) => setProgressMsg(msg),
           });
           file = result.file;
