@@ -211,7 +211,7 @@ Format it cleanly so I could hand it directly to a developer.
 `;
 
 // Step 9: AI Builder Prompt
-export const AI_BUILDER_PROMPT_PROMPT = `Now create a ready-to-use prompt I can paste into an AI website builder like Bolt.new, Lovable, or Webflow AI.
+export const AI_BUILDER_PROMPT_PROMPT = `Now create a ready-to-use prompt I can paste into an AI website builder like Bolt.new, Lovable, or Figma Make.
 
 Project Data:
 {projectData}

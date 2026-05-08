@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useProject } from '@/lib/ProjectContext';
 
-export default function Step9AIPrompt() {
+export default function Step11AIPrompt() {
   const { project, updateProject, nextStep, prevStep } = useProject();
 
   const [prompt, setPrompt] = useState<string>(project.aiBuilderPrompt?.prompt || '');
@@ -58,7 +58,7 @@ export default function Step9AIPrompt() {
     return (
       <div className="space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-black mb-3">Step 9: AI Builder Prompt</h1>
+          <h1 className="text-3xl font-bold text-black mb-3">Step 11: AI Builder Prompt</h1>
           <p className="text-neutral-600 max-w-2xl mx-auto">
             Generate a ready-to-use prompt you can paste into Bolt.new, Lovable, or any AI website builder.
           </p>
@@ -87,13 +87,13 @@ export default function Step9AIPrompt() {
               <div className="text-sm text-neutral-500">Beautiful websites</div>
             </a>
             <a
-              href="https://webflow.com"
+              href="https://www.figma.com/make"
               target="_blank"
               rel="noopener noreferrer"
               className="p-4 bg-white rounded-lg border border-neutral-200 hover:border-[#e31837] transition-colors"
             >
-              <div className="font-medium text-black mb-1">Webflow AI</div>
-              <div className="text-sm text-neutral-500">Professional sites</div>
+              <div className="font-medium text-black mb-1">Figma Make</div>
+              <div className="text-sm text-neutral-500">Design to code</div>
             </a>
           </div>
         </div>
@@ -141,7 +141,7 @@ export default function Step9AIPrompt() {
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-black mb-3">Step 9: AI Builder Prompt</h1>
+        <h1 className="text-3xl font-bold text-black mb-3">Step 11: AI Builder Prompt</h1>
         <p className="text-neutral-600">Copy this prompt and paste it into your AI website builder</p>
       </div>
 

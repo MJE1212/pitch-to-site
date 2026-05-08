@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { useProject } from '@/lib/ProjectContext';
-import { CompanyStage, WebsitePurpose } from '@/lib/types';
+import { WebsitePurpose } from '@/lib/types';
 
-export default function Step2WebsitePurpose() {
+export default function Step3WebsitePurpose() {
   const { project, updateProject, nextStep, prevStep } = useProject();
 
   const [purpose, setPurpose] = useState<WebsitePurpose>(
@@ -15,15 +15,9 @@ export default function Step2WebsitePurpose() {
       companyStage: 'building',
       linkedInUrl: '',
       twitterUrl: '',
+      firstTenSecondsBelief: '',
     }
   );
-
-  const stages: { value: CompanyStage; label: string; description: string }[] = [
-    { value: 'idea', label: 'Idea Stage', description: 'No product yet' },
-    { value: 'building', label: 'Building', description: 'Product in development' },
-    { value: 'beta', label: 'Beta/Pilot', description: 'Early users testing' },
-    { value: 'launched', label: 'Launched', description: 'Live product, getting traction' },
-  ];
 
   const handleContinue = () => {
     updateProject({ websitePurpose: purpose });
@@ -33,7 +27,7 @@ export default function Step2WebsitePurpose() {
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-black mb-3">Step 2: Website Purpose</h1>
+        <h1 className="text-3xl font-bold text-black mb-3">Step 3: Website Purpose</h1>
         <p className="text-neutral-600 max-w-2xl mx-auto">
           Define who this website is for and what you want visitors to do. This shapes everything else.
         </p>
@@ -46,56 +40,30 @@ export default function Step2WebsitePurpose() {
         </p>
       </div>
 
-      {/* Company Stage */}
-      <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-6">
-        <h2 className="text-lg font-semibold text-black mb-4">Where is your company right now?</h2>
-        <div className="grid sm:grid-cols-2 gap-3">
-          {stages.map((stage) => (
-            <button
-              key={stage.value}
-              onClick={() => setPurpose({ ...purpose, companyStage: stage.value })}
-              className={`
-                p-4 rounded-lg border text-left transition-all
-                ${purpose.companyStage === stage.value
-                  ? 'border-black bg-black text-white'
-                  : 'border-neutral-200 hover:border-neutral-400 bg-white'
-                }
-              `}
-            >
-              <div className={`font-medium ${purpose.companyStage === stage.value ? 'text-white' : 'text-black'}`}>{stage.label}</div>
-              <div className={`text-sm ${purpose.companyStage === stage.value ? 'text-white/70' : 'text-neutral-500'}`}>{stage.description}</div>
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Primary Audience — locked for The Engine cohort.
+          Picker removed: pre-seed Tough Tech sites are always built for investors → talent → partners.
+          See docs/tough-tech-patterns.md for rationale. */}
 
-      {/* Primary Audience */}
+      {/* First-10-Seconds Belief */}
       <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-6">
-        <h2 className="text-lg font-semibold text-black mb-2">Primary Audience</h2>
-        <p className="text-sm text-neutral-500 mb-4">Who is this website for? Select all that apply.</p>
-        <div className="flex flex-wrap gap-2">
-          {['investors', 'talent', 'partners', 'customers', 'media'].map((audience) => (
-            <button
-              key={audience}
-              onClick={() => {
-                const current = purpose.primaryAudience || [];
-                const updated = current.includes(audience)
-                  ? current.filter(a => a !== audience)
-                  : [...current, audience];
-                setPurpose({ ...purpose, primaryAudience: updated });
-              }}
-              className={`
-                px-4 py-2 rounded-lg border capitalize transition-all
-                ${(purpose.primaryAudience || []).includes(audience)
-                  ? 'border-black bg-black text-white'
-                  : 'border-neutral-300 text-neutral-600 hover:border-neutral-400 bg-white'
-                }
-              `}
-            >
-              {audience}
-            </button>
-          ))}
+        <h2 className="text-lg font-semibold text-black mb-2">First-10-Seconds Belief</h2>
+        <p className="text-sm text-neutral-500 mb-4">
+          What is the ONE thing an investor must believe within 10 seconds of landing on your site? This becomes the load-bearing claim that anchors your hero copy.
+        </p>
+        <div className="mb-3 p-3 bg-neutral-100 border border-neutral-200 rounded-lg">
+          <p className="text-xs text-neutral-600">
+            <span className="font-medium">Example:</span> "This team has cracked the yield problem that's blocked industrial biotech for 20 years."
+            <br />
+            <span className="font-medium">Bad example:</span> "We are building the future of biotech." (too vague — could fit any company)
+          </p>
         </div>
+        <textarea
+          value={purpose.firstTenSecondsBelief || ''}
+          onChange={(e) => setPurpose({ ...purpose, firstTenSecondsBelief: e.target.value })}
+          placeholder="This team has [achieved / unlocked / cracked] [specific hard thing] that [incumbent / status quo] couldn't…"
+          rows={3}
+          className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-lg text-black focus:border-black focus:ring-1 focus:ring-black outline-none resize-none"
+        />
       </div>
 
       {/* Calls to Action */}
@@ -173,7 +141,7 @@ export default function Step2WebsitePurpose() {
           onClick={handleContinue}
           className="px-6 py-3 bg-black hover:bg-neutral-800 text-white font-semibold rounded-lg transition-colors"
         >
-          Continue to Step 3
+          Continue to Step 4
         </button>
       </div>
     </div>

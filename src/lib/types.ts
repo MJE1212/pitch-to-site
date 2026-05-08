@@ -32,13 +32,25 @@ export interface WebsitePurpose {
   companyStage: CompanyStage;
   linkedInUrl?: string;
   twitterUrl?: string;
+  /**
+   * The single thing an investor must believe within 10 seconds of landing.
+   * Becomes the load-bearing claim that anchors hero copy and the AI builder blueprint.
+   * Example: "This team has cracked the yield problem that's blocked industrial biotech for 20 years."
+   */
+  firstTenSecondsBelief?: string;
 }
 
 // Step 3: Brand Voice
+export type AestheticArchetype = 'cold-precise' | 'bold-mission' | 'credible-academic' | 'lean-scrappy';
+
 export interface BrandVoice {
   oneLiner: string;
   personalityTraits: string[];
   desiredFeeling: string;
+  /**
+   * Aesthetic archetype calibrates color/font/density downstream. Picked from a fixed 4-option set.
+   */
+  aestheticArchetype?: AestheticArchetype;
 }
 
 // Step 4: Content Gaps (filled via Q&A)
@@ -121,9 +133,15 @@ export interface AIBuilderPrompt {
   prompt: string;
 }
 
+// Step 1: Pre-build Checklist (advisory — does not gate progression)
+export interface PreBuildChecklist {
+  checkedIds: string[];
+}
+
 // Complete website project state
 export interface WebsiteProject {
   currentStep: number;
+  preBuildChecklist?: PreBuildChecklist;
   deckAnalysis?: DeckAnalysis;
   websitePurpose?: WebsitePurpose;
   brandVoice?: BrandVoice;
@@ -136,14 +154,16 @@ export interface WebsiteProject {
 }
 
 export const STEPS = [
-  { number: 1, title: 'Analyze Deck', description: 'Upload & analyze your pitch deck' },
-  { number: 2, title: 'Website Purpose', description: 'Define audience and goals' },
-  { number: 3, title: 'Brand Voice', description: 'Define personality and tone' },
-  { number: 4, title: 'Fill Gaps', description: 'Answer questions to fill missing content' },
-  { number: 5, title: 'Homepage Content', description: 'Generate all website copy' },
-  { number: 6, title: 'Design Direction', description: 'Define visual style' },
-  { number: 7, title: 'Site Structure', description: 'Plan pages and navigation' },
-  { number: 8, title: 'Spec Document', description: 'Generate specification' },
-  { number: 9, title: 'AI Prompt', description: 'Generate builder prompt' },
-  { number: 10, title: 'Next Steps', description: 'Export and build' },
+  { number: 1, title: 'Pre-build Checklist', description: 'Gather your build materials before starting' },
+  { number: 2, title: 'Analyze Deck', description: 'Upload & analyze your pitch deck' },
+  { number: 3, title: 'Website Purpose', description: 'Define audience and goals' },
+  { number: 4, title: 'Brand Voice', description: 'Define personality and tone' },
+  { number: 5, title: 'Fill Gaps', description: 'Answer questions to fill missing content' },
+  { number: 6, title: 'Homepage Content', description: 'Generate all website copy' },
+  { number: 7, title: 'Design Direction', description: 'Define visual style' },
+  { number: 8, title: 'Site Structure', description: 'Plan pages and navigation' },
+  { number: 9, title: 'Spec Document', description: 'Generate specification' },
+  { number: 10, title: 'Quality Check', description: 'Audit copy and design against the Tough Tech rules' },
+  { number: 11, title: 'AI Prompt', description: 'Generate builder prompt' },
+  { number: 12, title: 'Next Steps', description: 'Export and build' },
 ];

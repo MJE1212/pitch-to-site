@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useProject } from '@/lib/ProjectContext';
 
-export default function Step8SpecDocument() {
+export default function Step9SpecDocument() {
   const { project, updateProject, nextStep, prevStep } = useProject();
 
   const [specMarkdown, setSpecMarkdown] = useState<string>(project.specDocument?.markdown || '');
@@ -66,9 +66,9 @@ export default function Step8SpecDocument() {
     return (
       <div className="space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-black mb-3">Step 8: Spec Document</h1>
+          <h1 className="text-3xl font-bold text-black mb-3">Step 9: Spec Document</h1>
           <p className="text-neutral-600 max-w-2xl mx-auto">
-            Generate a comprehensive specification document you can hand to a developer or use as reference.
+            Generate a comprehensive specification document. Save this and give it to your web designer if you're using one.
           </p>
         </div>
 
@@ -116,8 +116,8 @@ export default function Step8SpecDocument() {
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-black mb-3">Step 8: Spec Document</h1>
-        <p className="text-neutral-600">Your website specification - save this!</p>
+        <h1 className="text-3xl font-bold text-black mb-3">Step 9: Spec Document</h1>
+        <p className="text-neutral-600">Save this and give it to your web designer if you're using one.</p>
       </div>
 
       {/* Actions Bar */}
@@ -163,7 +163,7 @@ export default function Step8SpecDocument() {
             onClick={handleContinue}
             className="px-6 py-3 bg-black hover:bg-neutral-800 text-white font-semibold rounded-lg transition-colors"
           >
-            Continue to Step 9
+            Continue to Step 10
           </button>
         </div>
       </div>

@@ -1,8 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
 import { useProject } from '@/lib/ProjectContext';
 import { DesignDirection } from '@/lib/types';
+import { maybeCompressPDF } from '@/lib/compress-pdf';
+
+const BRAND_GUIDE_MAX_BYTES = 10 * 1024 * 1024; // 10MB
+// Anything larger than this in raw bytes will be aggressively compressed before we even bother
+// with the regular size check, since base64-encoded payloads close to 4.5MB get rejected by Vercel.
+const COMPRESS_TARGET_BYTES = 3 * 1024 * 1024;
 
 // Load Google Font dynamically
 function loadGoogleFont(fontName: string) {
@@ -37,7 +44,7 @@ function ColorBox({ color, label }: { color: string; label: string }) {
   );
 }
 
-export default function Step6DesignDirection() {
+export default function Step7DesignDirection() {
   const { project, updateProject, nextStep, prevStep } = useProject();
 
   const [design, setDesign] = useState<DesignDirection | null>(project.designDirection || null);
@@ -47,6 +54,138 @@ export default function Step6DesignDirection() {
   const [editingTypography, setEditingTypography] = useState(false);
   const [useCustomHeadingFont, setUseCustomHeadingFont] = useState(!!project.designDirection?.typography?.customHeadingFont);
   const [useCustomBodyFont, setUseCustomBodyFont] = useState(!!project.designDirection?.typography?.customBodyFont);
+  // Brand guide upload (optional — overrides Tough Tech defaults when provided)
+  const [brandGuideFile, setBrandGuideFile] = useState<File | null>(null);
+  const [brandGuideError, setBrandGuideError] = useState<string | null>(null);
+  const [brandGuideOriginalBytes, setBrandGuideOriginalBytes] = useState<number | null>(null);
+  const [brandGuideCompressMsg, setBrandGuideCompressMsg] = useState<string | null>(null);
+  const [isCompressingBrandGuide, setIsCompressingBrandGuide] = useState(false);
+
+  const readFileAsBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Strip the "data:application/pdf;base64," prefix; we only want the payload.
+        resolve(result.split(',')[1]);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  // Dropzone for brand guide upload — used in both pre-generate and post-generate sections.
+  const onBrandGuideDrop = useCallback(
+    async (accepted: File[], rejected: unknown[]) => {
+      setBrandGuideError(null);
+      setBrandGuideCompressMsg(null);
+      if (rejected.length > 0) {
+        setBrandGuideError('Please upload a valid PDF file.');
+        return;
+      }
+      const file = accepted[0];
+      if (!file) return;
+      if (file.size > BRAND_GUIDE_MAX_BYTES) {
+        setBrandGuideError('Brand guide PDF must be under 10MB. Try compressing it before uploading.');
+        return;
+      }
+
+      // Run client-side compression for any file over ~3MB so the base64 payload fits under
+      // the Vercel serverless body limit (~4.5MB).
+      if (file.size > COMPRESS_TARGET_BYTES) {
+        setIsCompressingBrandGuide(true);
+        setBrandGuideOriginalBytes(file.size);
+        try {
+          const result = await maybeCompressPDF(file, {
+            onProgress: (msg) => setBrandGuideCompressMsg(msg),
+          });
+          if (result.compressed) {
+            const pct = Math.round((1 - result.finalBytes / result.originalBytes) * 100);
+            setBrandGuideCompressMsg(
+              `Compressed from ${(result.originalBytes / 1024 / 1024).toFixed(1)} MB to ${(result.finalBytes / 1024 / 1024).toFixed(1)} MB (${pct}% smaller).`
+            );
+          } else {
+            setBrandGuideCompressMsg(null);
+          }
+          setBrandGuideFile(result.file);
+        } catch (err) {
+          console.error('Brand guide compression failed:', err);
+          setBrandGuideError(
+            'Could not compress this PDF. Try a smaller file, or compress it before uploading.'
+          );
+          setBrandGuideCompressMsg(null);
+        } finally {
+          setIsCompressingBrandGuide(false);
+        }
+      } else {
+        setBrandGuideOriginalBytes(null);
+        setBrandGuideFile(file);
+      }
+    },
+    []
+  );
+
+  const { getRootProps: getBrandGuideRootProps, getInputProps: getBrandGuideInputProps, isDragActive: isBrandGuideDragActive } = useDropzone({
+    onDrop: onBrandGuideDrop,
+    accept: { 'application/pdf': ['.pdf'] },
+    maxFiles: 1,
+  });
+
+  // Dropzone for logo upload — image files, stored as a base64 data URL on design.logo.
+  const onLogoDrop = useCallback((accepted: File[], rejected: unknown[]) => {
+    if (rejected.length > 0) return;
+    const file = accepted[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setDesign((prev) =>
+        prev ? { ...prev, logo: { fileName: file.name, dataUrl } } : prev
+      );
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const { getRootProps: getLogoRootProps, getInputProps: getLogoInputProps, isDragActive: isLogoDragActive } = useDropzone({
+    onDrop: onLogoDrop,
+    accept: { 'image/*': ['.png', '.jpg', '.jpeg', '.svg', '.webp'] },
+    maxFiles: 1,
+  });
+
+  const renderBrandGuideDropzone = () => {
+    if (isCompressingBrandGuide) {
+      return (
+        <div className="border-2 border-dashed border-neutral-300 rounded-lg p-6 text-center">
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-5 h-5 border-2 border-[#e31837] border-t-transparent rounded-full animate-spin" />
+            <p className="text-neutral-700 text-sm">{brandGuideCompressMsg || 'Compressing…'}</p>
+          </div>
+          <p className="text-neutral-500 text-xs mt-2">Large PDFs are compressed in your browser before upload.</p>
+        </div>
+      );
+    }
+    return (
+      <div
+        {...getBrandGuideRootProps()}
+        className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+          isBrandGuideDragActive
+            ? 'border-[#e31837] bg-red-50'
+            : 'border-neutral-300 hover:border-neutral-400'
+        }`}
+      >
+        <input {...getBrandGuideInputProps()} />
+        {isBrandGuideDragActive ? (
+          <p className="text-[#e31837] font-medium text-sm">Drop your brand guide here</p>
+        ) : (
+          <>
+            <p className="text-neutral-600 text-sm">
+              <span className="text-[#e31837] font-medium">Click to upload</span> or drag and drop a brand guide PDF
+            </p>
+            <p className="text-neutral-500 text-xs mt-1">PDF only · Max 10MB · Files over 3MB are auto-compressed in-browser</p>
+          </>
+        )}
+      </div>
+    );
+  };
 
   // Load Google Fonts when fonts change
   useEffect(() => {
@@ -63,14 +202,24 @@ export default function Step6DesignDirection() {
     setError(null);
 
     try {
+      const body: Record<string, unknown> = {
+        deckAnalysis: project.deckAnalysis,
+        brandVoice: project.brandVoice,
+        websitePurpose: project.websitePurpose,
+        contentGaps: project.contentGaps,
+      };
+
+      if (brandGuideFile) {
+        body.brandGuide = {
+          fileName: brandGuideFile.name,
+          dataBase64: await readFileAsBase64(brandGuideFile),
+        };
+      }
+
       const response = await fetch('/api/generate-design', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          deckAnalysis: project.deckAnalysis,
-          brandVoice: project.brandVoice,
-          websitePurpose: project.websitePurpose,
-        }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {
@@ -118,7 +267,7 @@ export default function Step6DesignDirection() {
     return (
       <div className="space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-black mb-3">Step 6: Design Direction</h1>
+          <h1 className="text-3xl font-bold text-black mb-3">Step 7: Design Direction</h1>
           <p className="text-neutral-600 max-w-2xl mx-auto">
             Define the visual style following the "Tough Tech Website Standard" - proven for deep tech startups.
           </p>
@@ -130,6 +279,45 @@ export default function Step6DesignDirection() {
             <span className="font-medium">Note:</span> We'll analyze your pitch deck for any existing brand colors and typography.
             If none are found, we'll suggest colors that match the Tough Tech aesthetic.
           </p>
+        </div>
+
+        {/* Brand Guide Upload (optional) */}
+        <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-6">
+          <h2 className="text-lg font-semibold text-black mb-1">Brand Guide <span className="font-normal text-neutral-500">(optional)</span></h2>
+          <p className="text-sm text-neutral-500 mb-4">
+            Optional — if you have one. We'll extract your colors, fonts, and voice rules from it and use them instead of generating defaults.
+          </p>
+
+          {brandGuideFile ? (
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 px-4 py-3 bg-white border border-neutral-200 rounded-lg">
+                  <p className="text-black font-medium text-sm">{brandGuideFile.name}</p>
+                  <p className="text-neutral-500 text-xs">{(brandGuideFile.size / 1024).toFixed(0)} KB</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setBrandGuideFile(null);
+                    setBrandGuideError(null);
+                    setBrandGuideCompressMsg(null);
+                    setBrandGuideOriginalBytes(null);
+                  }}
+                  className="text-sm text-red-600 hover:text-red-700"
+                >
+                  Remove
+                </button>
+              </div>
+              {brandGuideCompressMsg && (
+                <p className="text-xs text-neutral-500 mt-2">{brandGuideCompressMsg}</p>
+              )}
+            </div>
+          ) : (
+            renderBrandGuideDropzone()
+          )}
+
+          {brandGuideError && (
+            <p className="text-red-600 text-sm mt-2">{brandGuideError}</p>
+          )}
         </div>
 
         <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-8 text-center">
@@ -169,7 +357,7 @@ export default function Step6DesignDirection() {
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-black mb-3">Step 6: Design Direction</h1>
+        <h1 className="text-3xl font-bold text-black mb-3">Step 7: Design Direction</h1>
         <p className="text-neutral-600">Your visual design brief for the website</p>
       </div>
 
@@ -481,42 +669,28 @@ export default function Step6DesignDirection() {
             </div>
           </div>
         ) : (
-          <div className="border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file && design) {
-                  const reader = new FileReader();
-                  reader.onload = (event) => {
-                    const dataUrl = event.target?.result as string;
-                    setDesign({
-                      ...design,
-                      logo: {
-                        fileName: file.name,
-                        dataUrl,
-                      },
-                    });
-                  };
-                  reader.readAsDataURL(file);
-                }
-              }}
-              className="hidden"
-              id="logo-upload"
-            />
-            <label
-              htmlFor="logo-upload"
-              className="cursor-pointer"
-            >
-              <svg className="w-12 h-12 text-neutral-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <p className="text-neutral-600 mb-1">
-                <span className="text-[#e31837] font-medium">Click to upload</span> your logo
-              </p>
-              <p className="text-neutral-500 text-sm">PNG, JPG, or SVG (recommended)</p>
-            </label>
+          <div
+            {...getLogoRootProps()}
+            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+              isLogoDragActive
+                ? 'border-[#e31837] bg-red-50'
+                : 'border-neutral-300 hover:border-neutral-400'
+            }`}
+          >
+            <input {...getLogoInputProps()} />
+            <svg className="w-12 h-12 text-neutral-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            {isLogoDragActive ? (
+              <p className="text-[#e31837] font-medium">Drop your logo here</p>
+            ) : (
+              <>
+                <p className="text-neutral-600 mb-1">
+                  <span className="text-[#e31837] font-medium">Click to upload</span> or drag and drop your logo
+                </p>
+                <p className="text-neutral-500 text-sm">PNG, JPG, SVG, or WebP</p>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -569,7 +743,7 @@ export default function Step6DesignDirection() {
             onClick={handleContinue}
             className="px-6 py-3 bg-black hover:bg-neutral-800 text-white font-semibold rounded-lg transition-colors"
           >
-            Continue to Step 7
+            Continue to Step 8
           </button>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { CLAUDE_MODEL } from '@/lib/model';
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,71 +9,160 @@ export async function POST(request: NextRequest) {
 
     const companyName = deckAnalysis?.elements?.companyName?.content || 'Company';
 
-    const buildPrompt = () => {
-      return `Create a professional single-page website for ${companyName}, a Tough Tech startup.
+    // Trust signals come from Step 5's homepageContent (specific items like "DOE ARPA-E grant, $1.5M")
+    // — not from Step 6's designDirection (which holds generic CATEGORIES like "University affiliations").
+    // Strip out vague items (TBD-style placeholders, single-word categories) so we don't ship a
+    // half-finished trust section to Lovable.
+    const isSpecificTrustItem = (s: string): boolean => {
+      const trimmed = s.trim();
+      if (trimmed.length < 12) return false;
+      const lower = trimmed.toLowerCase();
+      // Reject generic placeholders.
+      const genericMarkers = [
+        'to be announced', 'tbd', 'coming soon', 'to be confirmed',
+        'placeholder', 'will be added', 'pending',
+      ];
+      if (genericMarkers.some(m => lower.includes(m))) return false;
+      // Reject pure category labels with no specifics: "University affiliations",
+      // "Team credentials", "Grants and awards", etc. Heuristic: must contain a digit,
+      // a $, a year, or at least 2 capital-letter words (named entities).
+      const hasNumber = /\d/.test(trimmed);
+      const hasDollar = trimmed.includes('$');
+      const namedEntityCount = (trimmed.match(/\b[A-Z][a-zA-Z]+\b/g) || []).length;
+      return hasNumber || hasDollar || namedEntityCount >= 2;
+    };
+    const specificTrustItems = (homepageContent?.trustElements || []).filter(isSpecificTrustItem);
 
-=== BRAND & STYLE ===
-- Style: Clean, professional, credible - following the "Tough Tech Website Standard"
-- Colors: Primary ${designDirection?.colorPalette?.primary || '#1e3a5f'}, Accent ${designDirection?.colorPalette?.accent || '#3b82f6'}, Background ${designDirection?.colorPalette?.background || '#ffffff'}
-- Typography: ${designDirection?.typography?.headingFont || 'Inter'} for headings, ${designDirection?.typography?.bodyFont || 'Inter'} for body
-- Imagery: ${designDirection?.imageryStyle || 'Abstract scientific visuals, avoid generic stock photos'}
-- Personality: ${brandVoice?.personalityTraits?.join(', ') || 'Professional, Innovative, Trustworthy'}
+    const buildPrompt = () => {
+      return `Build a single-page website for ${companyName}, a pre-seed Tough Tech startup.
+
+The OUTPUT must be a complete, working, production-ready single-page website. The audience is a Series A investor (primary) and an engineering recruit (secondary).
+${websitePurpose?.firstTenSecondsBelief
+  ? `\n=== LOAD-BEARING INVESTOR BELIEF ===\nWithin 10 seconds of landing, the investor must believe:\n"${websitePurpose.firstTenSecondsBelief}"\nThe hero and trust sections must land this specific claim.\n`
+  : ''}
+This blueprint contains VERBATIM copy. Do not rewrite or paraphrase any quoted text. Use it as-is.
+
+=== TECH STACK (NON-NEGOTIABLE) ===
+- Framework: React + Tailwind CSS (use Next.js if available)
+- Component baseline: shadcn/ui (Card, Badge, Button) where applicable for built-in shadow/border treatments. Fall back to plain divs only when shadcn doesn't fit.
+- Mobile-responsive, mobile-first
+- Subtle motion is REQUIRED so the page doesn't read as a static wireframe: stat numerals count up on scroll-into-view (~1s duration), section labels (01/02/03) fade-in on scroll, cards hover-lift on mouseover (transform + shadow). NO motion that delays above-fold content loading.
+- Semantic HTML (real <h1>, <section>, <nav>)
+- SEO meta tags including description: "${brandVoice?.oneLiner || ''}"
+
+=== DESIGN SYSTEM (USE THESE EXACT VALUES) ===
+- Background: ${designDirection?.colorPalette?.background || '#FFFFFF'}
+- Primary text: ${designDirection?.colorPalette?.text || '#0A0E1A'}
+- Brand color: ${designDirection?.colorPalette?.primary || '#0A2540'}
+- Accent (CTAs and highlights ONLY): ${designDirection?.colorPalette?.accent || '#00D4A0'}
+- Headline font: ${designDirection?.typography?.headingFont || 'Inter'}, weight 600–700
+- Body font: ${designDirection?.typography?.bodyFont || 'Inter'}, weight 400
+- For numbers and data: IBM Plex Mono (signals precision)
+- Max content width: 1200px, centered
+- Generous whitespace in narrative sections; dense data presentation in stat strips — that contrast IS the rhythm
+- Sans-serif everywhere; gravitas comes from weight and size, not from serifs or ornament
+- SECTION BACKGROUND RHYTHM (required): alternate consecutive section backgrounds between three values — the base background, pure white, and an accent-tinted band (5% accent opacity). NO two adjacent sections may share a background. This rhythm guides the eye down the page and prevents the "all-on-one-cream" wireframe feel.
 
 === NAVIGATION ===
-Header with logo and nav items: ${siteStructure?.navigationItems?.join(', ') || 'About, Technology, Team, Contact Us'}
-Primary CTA button: "${homepageContent?.hero?.primaryCTA || websitePurpose?.primaryCTA || 'Contact Us'}"
+Sticky header on scroll. Layout: logo left, nav center-right (${siteStructure?.navigationItems?.join(' / ') || 'About / Technology / Team / Contact'}), primary CTA right.
+Primary CTA button text (verbatim): "${homepageContent?.hero?.primaryCTA || websitePurpose?.primaryCTA || 'Contact Us'}"
 
-=== HERO SECTION ===
-Headline: "${homepageContent?.hero?.headline || companyName}"
-Subheadline: "${homepageContent?.hero?.subheadline || brandVoice?.oneLiner || 'Breakthrough technology for tomorrow'}"
-CTA Button: "${homepageContent?.hero?.primaryCTA || 'Contact Us'}"
-- Large, confident headline with generous whitespace
-- Dark/muted background with light text OR light background with dark text
+=== SECTION 1 — HERO ===
+Headline (verbatim, do not alter): "${homepageContent?.hero?.headline || companyName}"
+Subhead (verbatim): "${homepageContent?.hero?.subheadline || brandVoice?.oneLiner || ''}" — render at text-2xl REQUIRED (never text-base, text-sm, or text-lg — those read as body copy and weaken the hero) with max-w-2xl and leading-relaxed. On mobile, may step down to text-xl. Never smaller.
+CTA button (verbatim): "${homepageContent?.hero?.primaryCTA || websitePurpose?.primaryCTA || 'Contact Us'}" — accent color background, no border, generous padding (px-8 py-4 minimum)
+Hero visual: use a LAYERED SVG illustration with at least 3 distinct visual layers, gradient fills, and drop shadows. A single-stroke line drawing is FORBIDDEN — that reads as wireframe placeholder. The visual should evoke the technology (e.g., biotech: layered cellular/molecular structures with depth; energy: layered system schematics; materials: layered process imagery; diagnostics: layered signal/biomarker visualizations). NO stock photography. NO isometric people-at-desks. NO AI-generated abstract blobs.
+Background: solid color or a subtle radial gradient (5–10% accent at center). NO generic linear gradient.
+Above-the-fold rule: hero must read complete without scrolling on a 1280×720 viewport.
 
-=== PROBLEM SECTION ===
-Header: "${homepageContent?.problem?.header || 'The Challenge'}"
-Body: "${homepageContent?.problem?.body || 'Current solutions fall short.'}"
+=== SECTION 2 — PROBLEM ===
+Section label: "01 / THE PROBLEM" (small caps, accent color, letter-spaced 0.1em)
+Headline (verbatim): "${homepageContent?.problem?.header || ''}"
+Body (verbatim): "${homepageContent?.problem?.body || ''}"
+If the body contains a number or stat, render it as a callout to the right or below: large IBM Plex Mono numerals (text-5xl or larger).
 
-=== SOLUTION SECTION ===
-Header: "${homepageContent?.solution?.header || 'Our Solution'}"
-Body: "${homepageContent?.solution?.body || 'We have developed a revolutionary approach.'}"
+=== SECTION 3 — THE BREAKTHROUGH ===
+Section label: "02 / THE BREAKTHROUGH"
+Headline (verbatim): "${homepageContent?.solution?.header || ''}"
+Body (verbatim): "${homepageContent?.solution?.body || ''}"
+REQUIRED visual: a 3-node horizontal process diagram below the body. Format: [Input] → [Mechanism] → [Output]. Each node is a Card component with shadow-md, a unique tinted background per node (warm cream → accent-tinted → cool gray, in that order), a numbered badge (01/02/03 in IBM Plex Mono, accent color, top-left of card), and a thin SVG arrow connector between nodes with a draw-on-scroll animation. Plain rectangles with hard-edge arrows are FORBIDDEN — they're the single biggest "wireframe" giveaway. If no specific labels are provided, use generic placeholders like "Substrate / Reaction / Product" and add a comment marker for the user to relabel.
 
-=== BENEFITS SECTION ===
-3 benefit cards in a row:
+=== SECTION 4 — OUTCOMES ===
+Section label: "03 / OUTCOMES"
+Three-column grid of elevated Card components (shadow-sm; hover:shadow-md; hover:-translate-y-1 with smooth transition). Each card contains, from top: a numbered badge (01/02/03 in IBM Plex Mono, accent color), a small icon (use lucide-react), the headline, and the body. Plain text under thin dividers is FORBIDDEN.
 ${homepageContent?.benefits?.map((b: { headline: string; description: string }, i: number) =>
-  `${i + 1}. "${b.headline}" - "${b.description}"`
-).join('\n') || '1. "Breakthrough Performance" - "Achieve results that weren\'t possible before."'}
+  `  Column ${i + 1}: Headline (verbatim) "${b.headline}" / Body (verbatim) "${b.description}"`
+).join('\n') || '  (No benefits provided — leave 3 placeholder columns)'}
 
-=== HOW IT WORKS SECTION ===
+=== SECTION 5 — HOW IT WORKS ===
+Section label: "04 / HOW IT WORKS"
+Render as a horizontal step row of elevated Cards OR a vertical timeline (developer's choice based on step count and viewport). Each step has a numbered badge (01/02/03/04 in IBM Plex Mono, accent color), an icon (lucide-react), a verb-led title, and a one-sentence body. Plain text rows under thin dividers are FORBIDDEN.
 ${homepageContent?.howItWorks?.map((s: { step: number; title: string; description: string }) =>
-  `Step ${s.step}: "${s.title}" - "${s.description}"`
-).join('\n') || 'Step 1: "Connect" - "Reach out to discuss your needs"'}
+  `  Step ${s.step}: "${s.title}" — "${s.description}"`
+).join('\n') || '  (No steps provided)'}
 
-=== TEAM SECTION (optional) ===
-Simple grid of team members with photos, names, and titles
+=== SECTION 6 — TEAM ===
+Section label: "05 / TEAM"
+Grid of elevated Card components (shadow-sm). Each card contains:
+  - A circular avatar (top, centered or left): the person's initials in the accent color on a tinted circle background, sized ~64px. This is a placeholder for a real headshot the founder will swap in later.
+  - Name (font-semibold)
+  - Title (text-sm, muted)
+  - ONE sentence on credentials specific to THIS problem: degree + university + prior employer + patent or paper count.
+  - Optional: a small row of prior-employer logos in muted grayscale (only if real and named in source data — do NOT invent).
+Plain text-only cards with hard-edge borders and no avatars are FORBIDDEN. Generic resume bullets ("results-driven engineer with 10 years of experience") are forbidden.
+Team data from deck: ${deckAnalysis?.elements?.teamInfo?.content || '(no team data provided — leave 3 placeholder cards labeled "TEAM MEMBER — REPLACE WITH REAL BIO")'}
 
-=== FINAL CTA SECTION ===
-Headline: "${homepageContent?.finalCTA?.headline || 'Ready to Get Started?'}"
-Supporting text: "${homepageContent?.finalCTA?.supportingText || 'Join us in building the future.'}"
-Button: "${homepageContent?.finalCTA?.buttonText || 'Contact Us'}"
-- High contrast background (dark with light text)
+${specificTrustItems.length > 0
+  ? `=== SECTION 7 — TRUST ===
+Section label: "06 / TRUST"
+Render the following as a row of pull-quotes or a tagged list (NOT a generic logo wall):
+${specificTrustItems.map((s: string) => `  - ${s}`).join('\n')}
+DO NOT invent investor logos, customer logos, or testimonials. Empty placeholder is preferable to fake content.`
+  : `=== NO TRUST SECTION ===
+The founder has NOT provided specific trust signals (real grants, papers, partners, or named investors). DO NOT render a TRUST section in the output. Specifically:
+- Do NOT include a "06 / TRUST" section label.
+- Do NOT include a placeholder section saying "What we'll show here as it lands", "Trust signals coming soon", "To be announced", or any similar copy.
+- Do NOT add a TBD card, an empty grid, or a faint heading suggesting future content.
+- The page MUST flow directly from Section 6 (Team) to Section 8 (Final CTA) with no intervening section, no spacing artifact, and no commented-out block.
+If you find yourself writing copy for a Trust section, STOP and delete that section. The site reads stronger without it.`}
+
+=== SECTION 8 — FINAL CTA ===
+Headline (verbatim): "${homepageContent?.finalCTA?.headline || ''}"
+Supporting text (verbatim): "${homepageContent?.finalCTA?.supportingText || ''}"
+Button (verbatim): "${homepageContent?.finalCTA?.buttonText || 'Contact Us'}"
+Section background: high contrast — either accent color or near-black. Add a SUBTLE radial gradient (10–15% lighter at center) OR a faint noise/grain texture overlay so the section doesn't read as flat solid color. Light text on dark, or vice versa. The CTA button should contrast strongly against this background (e.g., white button on accent-color background).
 
 === FOOTER ===
-Company name, copyright, links: ${siteStructure?.footerItems?.join(', ') || 'Privacy Policy, LinkedIn, Contact'}
+Minimal: location placeholder, copyright, ${siteStructure?.footerItems?.join(' / ') || 'Privacy / Contact / LinkedIn'}.
 ${websitePurpose?.linkedInUrl ? `LinkedIn: ${websitePurpose.linkedInUrl}` : ''}
-${websitePurpose?.twitterUrl ? `Twitter: ${websitePurpose.twitterUrl}` : ''}
+${websitePurpose?.twitterUrl ? `X: ${websitePurpose.twitterUrl}` : ''}
+Max 5 links. No newsletter widget unless the founder has a real list.
 
-=== TECHNICAL REQUIREMENTS ===
-- Fully responsive (mobile-first)
-- Smooth scroll navigation
-- Contact form or mailto link
-- Fast loading
-- SEO meta tags with description: "${brandVoice?.oneLiner || 'Breakthrough technology startup'}"
+=== ANTI-PATTERNS — DO NOT DO ANY OF THESE ===
+- DO NOT use stock photography of people in lab coats or "scientist with iPad" shots
+- DO NOT use isometric illustrations of people working at desks
+- DO NOT use pastel color palettes or rounded-card-everywhere "consumer SaaS" aesthetic
+- DO NOT use confetti gradients, neon, or playful color combos
+- DO NOT use "Learn More" as any CTA
+- DO NOT use carousels of testimonials or auto-playing video
+- DO NOT add chatbot widgets, popups, or cookie banners beyond a minimal accept button
+- DO NOT invent investor logos, customer logos, awards, or partnerships
+- DO NOT use Lorem Ipsum — every text block above contains the verbatim copy to use
+- DO NOT use serif display fonts — sans-serif throughout
+- DO NOT add a generic "About" page, blog, or pricing
+- DO NOT include the words: revolutionary, innovative, cutting-edge, next-generation, transformative, disruptive, world-class, seamless, robust, AI-powered (as buzzword), game-changing, paradigm shift, synergy
 
-=== WHAT TO AVOID ===
-${designDirection?.avoidList?.map((item: string) => `- ${item}`).join('\n') || '- Generic stock photos\n- Cluttered layouts'}
+=== ASSETS WHERE NOT PROVIDED ===
+${designDirection?.avoidList?.map((item: string) => `- AVOID: ${item}`).join('\n') || ''}
 
-Generate a complete, working website with all the above content and styling.`;
+=== SUCCESS CRITERION ===
+A Series A investor lands on the page, scrolls through it once, and can answer:
+1. What specifically does this team do? (named in the hero)
+2. What proof do they have it works? (visible in trust + outcomes sections)
+3. Why now? (visible in the breakthrough section)
+If the rendered site does not answer all three within the first two screens, regenerate.
+
+Generate the complete React + Tailwind code for this website.`;
     };
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -84,12 +174,33 @@ Generate a complete, working website with all the above content and styling.`;
     // With API key, we can polish the prompt
     const client = new Anthropic({ apiKey });
 
-    const prompt = `Now create a ready-to-use prompt I can paste into an AI website builder like Bolt.new, Lovable, or Webflow AI. Improve this AI website builder prompt to be more effective. Keep all the content but make it clearer and more comprehensive. The goal is: I paste this prompt, and I get a working website. Make it comprehensive but not bloated. Include everything needed, nothing extra. Return only the improved prompt text.
+    const prompt = `You are an editor reviewing a Lovable/Bolt blueprint for a pre-seed Tough Tech website. Apply this strict editorial pass to the blueprint below. The user will paste your output directly into Lovable/Bolt — it must be ready to use.
+
+EDITORIAL RULES:
+1. BANNED WORDS — find and replace every instance of: revolutionary, revolutionizing, innovative, cutting-edge, next-generation, next-gen, transformative, disruptive, world-class, best-in-class, seamless, robust, powerful, AI-powered (as buzzword), synergy, synergies, paradigm shift, game-changing, leveraging, empowering (unless followed by a concrete object). Replace each with a specific concrete claim, or delete the sentence.
+
+2. VAGUE CLAIMS — find any unqualified adjective ("fast," "scalable," "advanced," "efficient," "reliable"). Either add a specific number/comparison ("3× faster than electrochemical alternatives") or delete it.
+
+3. "WE" OPENERS — find any sentence in the Hero, Problem, Solution, Outcomes, or How It Works sections that starts with "We". Rewrite to start with the noun, the outcome, or the incumbent. Team bios and mission lines may keep "We."
+
+4. WEAK CTAs — find any "Learn More" / "Get Started" / "Sign Up Free" button text. Replace with: "See how it works" / "Read the technical paper" / "Meet the team" / "Contact Us" / "Get early access".
+
+5. PLACEHOLDERS — confirm every section has VERBATIM copy filled in. If you find any "[insert headline]", "[describe X]", or empty string, flag it explicitly with a marker like <!-- MISSING: hero subhead --> rather than silently generating new text.
+
+6. HERO LENGTH — confirm the hero headline is ≤10 words. If longer, rewrite using one of these formulas: outcome+qualifier ("Crop Protection Without Compromise"), category claim ("The 21st century metals company"), input/output staccato ("Rocks in. Lithium out. Zero waste."), contrarian declaration ("Novel superconductors the world actually needs"), capability sentence.
+
+7. TRUST INTEGRITY — the Trust section must NOT invent any investor logo, customer logo, award, or testimonial. If the source data has no trust signals, leave the placeholder block exactly as written ("REPLACE WITH REAL LOGOS WHEN AVAILABLE").
+
+8. PRESERVE STRUCTURE — keep all section labels (01, 02, 03 …), all design system values (hex codes, fonts), all anti-pattern lists, and the success criterion exactly as written. Do not add or remove sections.
+
+OUTPUT: Return ONLY the improved blueprint text, ready to paste into Lovable/Bolt. No preamble, no commentary, no markdown code fence.
+
+BLUEPRINT TO REVIEW AND EDIT:
 
 ${buildPrompt()}`;
 
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: CLAUDE_MODEL,
       max_tokens: 4096,
       messages: [{ role: 'user', content: prompt }],
     });

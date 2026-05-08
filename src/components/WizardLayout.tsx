@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useProject } from '@/lib/ProjectContext';
 import { STEPS } from '@/lib/types';
 import Link from 'next/link';
@@ -11,6 +12,12 @@ interface WizardLayoutProps {
 export default function WizardLayout({ children }: WizardLayoutProps) {
   const { project, goToStep, resetProject } = useProject();
   const currentStep = project.currentStep;
+
+  // Scroll to top whenever the wizard advances/retreats so each step starts at the top
+  // of the viewport instead of inheriting the previous step's scroll position.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [currentStep]);
 
   return (
     <div className="min-h-screen bg-white">

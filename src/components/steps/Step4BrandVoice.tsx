@@ -2,24 +2,51 @@
 
 import { useState, useEffect } from 'react';
 import { useProject } from '@/lib/ProjectContext';
-import { BrandVoice } from '@/lib/types';
+import { BrandVoice, AestheticArchetype } from '@/lib/types';
 
-const PERSONALITY_OPTIONS = [
-  'Professional', 'Friendly', 'Bold', 'Playful', 'Technical',
-  'Simple', 'Premium', 'Innovative', 'Trustworthy', 'Warm', 'Edgy'
+const ARCHETYPES: { value: AestheticArchetype; label: string; description: string; refs: string }[] = [
+  {
+    value: 'cold-precise',
+    label: 'Cold / precise',
+    description: 'Restrained, technical, almost editorial. Lots of whitespace, monospace data, near-monochrome palette.',
+    refs: 'Cohere · DeepMind · Pascal',
+  },
+  {
+    value: 'bold-mission',
+    label: 'Bold / mission-driven',
+    description: 'Big claims, declarative tone, mission-as-headline. Higher contrast palette, confident visual scale.',
+    refs: 'Impossible Foods · Anduril · Anthology',
+  },
+  {
+    value: 'credible-academic',
+    label: 'Credible / academic',
+    description: 'Cite-the-paper voice. Numbered sections, peer-review references, dense data callouts.',
+    refs: 'Recursion · BioAtla · Foundation Alloy',
+  },
+  {
+    value: 'lean-scrappy',
+    label: 'Lean / scrappy',
+    description: 'YC demo-day energy. Short sentences, single-stat strips, minimal chrome, get-to-the-point.',
+    refs: 'Rock Zero · Robigo · early-stage YC sites',
+  },
 ];
 
-export default function Step3BrandVoice() {
+const PERSONALITY_OPTIONS = [
+  'Professional', 'Bold', 'Technical', 'Innovative', 'Trustworthy',
+  'Warm', 'Edgy', 'Rigorous', 'Visionary', 'Grounded', 'Resourceful',
+  'Expert', 'Inspiring'
+];
+
+export default function Step4BrandVoice() {
   const { project, updateProject, nextStep, prevStep } = useProject();
 
   // Extract one-liner from deck analysis if available
   const extractedOneLiner = project.deckAnalysis?.elements?.tagline?.content ||
     project.deckAnalysis?.elements?.solutionDescription?.content || '';
 
-  // Extract first impression from deck analysis
-  const extractedFeeling = project.deckAnalysis?.elements?.differentiators?.content
-    ? `This is a credible solution that ${project.deckAnalysis.elements.differentiators.content.toLowerCase()}`
-    : 'This is a credible and exciting breakthrough to a previously unsolved problem.';
+  // Short, generic default — the founder edits this to taste.
+  // Previously we prepended differentiators content, which produced very long auto-fills.
+  const extractedFeeling = 'Credible breakthrough. Worth a closer look.';
 
   const [brandVoice, setBrandVoice] = useState<BrandVoice>(
     project.brandVoice || {
@@ -111,7 +138,7 @@ export default function Step3BrandVoice() {
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-black mb-3">Step 3: Brand Voice</h1>
+        <h1 className="text-3xl font-bold text-black mb-3">Step 4: Brand Voice</h1>
         <p className="text-neutral-600 max-w-2xl mx-auto">
           Define your brand's personality and tone so all content feels consistent.
         </p>
@@ -224,23 +251,46 @@ export default function Step3BrandVoice() {
         )}
       </div>
 
+      {/* Aesthetic Archetype */}
+      <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-6">
+        <h2 className="text-lg font-semibold text-black mb-2">Aesthetic Archetype</h2>
+        <p className="text-sm text-neutral-500 mb-4">
+          Which feels most like your company? This calibrates color, typography, and visual density downstream.
+        </p>
+        <div className="grid md:grid-cols-2 gap-3">
+          {ARCHETYPES.map((a) => (
+            <button
+              key={a.value}
+              onClick={() => setBrandVoice({ ...brandVoice, aestheticArchetype: a.value })}
+              className={`p-4 rounded-lg border text-left transition-all ${
+                brandVoice.aestheticArchetype === a.value
+                  ? 'border-black bg-black text-white'
+                  : 'border-neutral-200 hover:border-neutral-400 bg-white'
+              }`}
+            >
+              <div className={`font-medium mb-1 ${brandVoice.aestheticArchetype === a.value ? 'text-white' : 'text-black'}`}>
+                {a.label}
+              </div>
+              <div className={`text-sm ${brandVoice.aestheticArchetype === a.value ? 'text-white/80' : 'text-neutral-500'}`}>
+                {a.description}
+              </div>
+              {/* a.refs is intentionally NOT rendered — it's kept on the constant for downstream reference (design prompt) but hidden from the founder's UI. */}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Desired Feeling / First Impression */}
       <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-6">
         <h2 className="text-lg font-semibold text-black mb-2">First Impression</h2>
         <p className="text-sm text-neutral-500 mb-4">
-          The feeling someone should have within 5 seconds of landing on your site:
+          What should a visitor feel in the first 5 seconds? One short sentence.
         </p>
-        {extractedFeeling !== 'This is a credible and exciting breakthrough to a previously unsolved problem.' && !project.brandVoice?.desiredFeeling && (
-          <div className="mb-3 p-3 bg-neutral-100 border border-neutral-200 rounded-lg">
-            <p className="text-sm text-neutral-600">
-              <span className="font-medium">Extracted from your deck:</span> We've suggested this based on your differentiators. Feel free to edit.
-            </p>
-          </div>
-        )}
         <textarea
           value={brandVoice.desiredFeeling}
           onChange={(e) => setBrandVoice({ ...brandVoice, desiredFeeling: e.target.value })}
           rows={2}
+          placeholder="e.g., Credible breakthrough. Worth a closer look."
           className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-lg text-black focus:border-black focus:ring-1 focus:ring-black outline-none resize-none"
         />
       </div>
@@ -258,7 +308,7 @@ export default function Step3BrandVoice() {
           disabled={!brandVoice.oneLiner.trim() || brandVoice.personalityTraits.length === 0}
           className="px-6 py-3 bg-black hover:bg-neutral-800 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
         >
-          Continue to Step 4
+          Continue to Step 5
         </button>
       </div>
     </div>

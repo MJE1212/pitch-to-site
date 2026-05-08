@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useProject } from '@/lib/ProjectContext';
 import { HomepageContent } from '@/lib/types';
 
-export default function Step5HomepageContent() {
+export default function Step6HomepageContent() {
   const { project, updateProject, nextStep, prevStep } = useProject();
 
   const [content, setContent] = useState<HomepageContent | null>(project.homepageContent || null);
@@ -75,7 +75,7 @@ export default function Step5HomepageContent() {
     return (
       <div className="space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-black mb-3">Step 5: Homepage Content</h1>
+          <h1 className="text-3xl font-bold text-black mb-3">Step 6: Homepage Content</h1>
           <p className="text-neutral-600 max-w-2xl mx-auto">
             Generate all the copy for your homepage based on everything we've gathered.
           </p>
@@ -125,7 +125,7 @@ export default function Step5HomepageContent() {
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-black mb-3">Step 5: Homepage Content</h1>
+        <h1 className="text-3xl font-bold text-black mb-3">Step 6: Homepage Content</h1>
         <p className="text-neutral-600">Review and edit your generated content. Click Edit on any section to modify.</p>
       </div>
 
@@ -428,7 +428,7 @@ export default function Step5HomepageContent() {
             onClick={handleContinue}
             className="px-6 py-3 bg-black hover:bg-neutral-800 text-white font-semibold rounded-lg transition-colors"
           >
-            Continue to Step 6
+            Continue to Step 7
           </button>
         </div>
       </div>

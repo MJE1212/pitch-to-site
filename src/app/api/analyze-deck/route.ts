@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { parsePDF } from '@/lib/pdf-parser';
 import Anthropic from '@anthropic-ai/sdk';
 import { DECK_ANALYSIS_PROMPT } from '@/lib/ai-prompts';
+import { CLAUDE_MODEL } from '@/lib/model';
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,6 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
+    console.log('[analyze-deck] API key status:', apiKey ? `present (length ${apiKey.length}, prefix ${apiKey.slice(0, 12)}...)` : 'MISSING');
     if (!apiKey || apiKey === 'your_api_key_here') {
       // Demo mode - return mock analysis
       return NextResponse.json({
@@ -60,7 +62,7 @@ export async function POST(request: NextRequest) {
     if (hasSubstantialText) {
       // Text-based analysis
       const message = await client.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: CLAUDE_MODEL,
         max_tokens: 2048,
         messages: [
           {
@@ -91,9 +93,8 @@ export async function POST(request: NextRequest) {
 
       try {
         const message = await client.messages.create({
-          model: 'claude-sonnet-4-20250514',
+          model: CLAUDE_MODEL,
           max_tokens: 2048,
-          betas: ['pdfs-2024-09-25'],
           messages: [
             {
               role: 'user',
@@ -131,6 +132,14 @@ export async function POST(request: NextRequest) {
 
     const analysis = JSON.parse(jsonMatch[0]);
     analysis.rawText = pdfText;
+
+    // Post-process: title-case the company name if the deck has it in all-lowercase.
+    // We deliberately leave ALL-CAPS and mixed-case names alone so brand-correct forms
+    // like "IBM", "OpenAI", or "iPhone" survive untouched.
+    const cn = analysis?.elements?.companyName?.content;
+    if (typeof cn === 'string' && cn.trim() && !/[A-Z]/.test(cn)) {
+      analysis.elements.companyName.content = cn.replace(/\b\w/g, (c: string) => c.toUpperCase());
+    }
 
     return NextResponse.json({ analysis });
   } catch (error) {

@@ -5,7 +5,7 @@ import { useDropzone } from 'react-dropzone';
 import { useProject } from '@/lib/ProjectContext';
 import { DeckAnalysis } from '@/lib/types';
 
-export default function Step1AnalyzeDeck() {
+export default function Step2AnalyzeDeck() {
   const { project, updateProject, nextStep } = useProject();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,7 +93,7 @@ export default function Step1AnalyzeDeck() {
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-black mb-3">Step 1: Analyze Your Deck</h1>
+        <h1 className="text-3xl font-bold text-black mb-3">Step 2: Analyze Your Deck</h1>
         <p className="text-neutral-600 max-w-2xl mx-auto">
           Upload your pitch deck and we'll identify what content you have versus what needs to be filled in.
         </p>
@@ -187,7 +187,7 @@ export default function Step1AnalyzeDeck() {
               onClick={nextStep}
               className="px-6 py-3 bg-black hover:bg-neutral-800 text-white font-semibold rounded-lg transition-colors"
             >
-              Continue to Step 2
+              Continue to Step 3
             </button>
           </div>
         </>

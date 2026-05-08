@@ -2,7 +2,7 @@
 
 import { useProject } from '@/lib/ProjectContext';
 
-export default function Step10NextSteps() {
+export default function Step12NextSteps() {
   const { project, prevStep, resetProject } = useProject();
 
   const handleDownloadSpec = () => {

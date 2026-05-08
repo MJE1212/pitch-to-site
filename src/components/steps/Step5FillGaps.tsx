@@ -9,7 +9,7 @@ interface Question {
   context: string;
 }
 
-export default function Step4FillGaps() {
+export default function Step5FillGaps() {
   const { project, updateProject, nextStep, prevStep } = useProject();
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -106,7 +106,7 @@ export default function Step4FillGaps() {
     return (
       <div className="space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-black mb-3">Step 4: Fill Content Gaps</h1>
+          <h1 className="text-3xl font-bold text-black mb-3">Step 5: Fill Content Gaps</h1>
           <p className="text-neutral-600 max-w-2xl mx-auto">
             Great news! Your pitch deck contains all the key information we need.
           </p>
@@ -124,7 +124,7 @@ export default function Step4FillGaps() {
             Back
           </button>
           <button onClick={handleContinue} className="px-6 py-3 bg-black hover:bg-neutral-800 text-white font-semibold rounded-lg transition-colors">
-            Continue to Step 5
+            Continue to Step 6
           </button>
         </div>
       </div>
@@ -134,7 +134,7 @@ export default function Step4FillGaps() {
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-black mb-3">Step 4: Fill Content Gaps</h1>
+        <h1 className="text-3xl font-bold text-black mb-3">Step 5: Fill Content Gaps</h1>
         <p className="text-neutral-600 max-w-2xl mx-auto">
           Answer these questions to fill in the missing information from your deck.
         </p>
@@ -183,7 +183,7 @@ export default function Step4FillGaps() {
       <div className="flex justify-between">
         <div className="flex gap-2">
           <button onClick={prevStep} className="px-6 py-3 text-neutral-500 hover:text-black transition-colors">
-            Back to Step 3
+            Back to Step 4
           </button>
           {currentQuestionIndex > 0 && (
             <button onClick={handlePrev} className="px-4 py-3 text-neutral-500 hover:text-black transition-colors">
@@ -204,7 +204,7 @@ export default function Step4FillGaps() {
               onClick={handleContinue}
               className="px-6 py-3 bg-black hover:bg-neutral-800 text-white font-semibold rounded-lg transition-colors"
             >
-              Continue to Step 5
+              Continue to Step 6
             </button>
           )}
         </div>

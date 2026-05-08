@@ -2,16 +2,18 @@
 
 import { useProject } from '@/lib/ProjectContext';
 import WizardLayout from '@/components/WizardLayout';
-import Step1AnalyzeDeck from '@/components/steps/Step1AnalyzeDeck';
-import Step2WebsitePurpose from '@/components/steps/Step2WebsitePurpose';
-import Step3BrandVoice from '@/components/steps/Step3BrandVoice';
-import Step4FillGaps from '@/components/steps/Step4FillGaps';
-import Step5HomepageContent from '@/components/steps/Step5HomepageContent';
-import Step6DesignDirection from '@/components/steps/Step6DesignDirection';
-import Step7SiteStructure from '@/components/steps/Step7SiteStructure';
-import Step8SpecDocument from '@/components/steps/Step8SpecDocument';
-import Step9AIPrompt from '@/components/steps/Step9AIPrompt';
-import Step10NextSteps from '@/components/steps/Step10NextSteps';
+import Step1PreBuildChecklist from '@/components/steps/Step1PreBuildChecklist';
+import Step2AnalyzeDeck from '@/components/steps/Step2AnalyzeDeck';
+import Step3WebsitePurpose from '@/components/steps/Step3WebsitePurpose';
+import Step4BrandVoice from '@/components/steps/Step4BrandVoice';
+import Step5FillGaps from '@/components/steps/Step5FillGaps';
+import Step6HomepageContent from '@/components/steps/Step6HomepageContent';
+import Step7DesignDirection from '@/components/steps/Step7DesignDirection';
+import Step8SiteStructure from '@/components/steps/Step8SiteStructure';
+import Step9SpecDocument from '@/components/steps/Step9SpecDocument';
+import Step10Validator from '@/components/steps/Step10Validator';
+import Step11AIPrompt from '@/components/steps/Step11AIPrompt';
+import Step12NextSteps from '@/components/steps/Step12NextSteps';
 
 export default function WizardPage() {
   const { project } = useProject();
@@ -20,27 +22,31 @@ export default function WizardPage() {
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <Step1AnalyzeDeck />;
+        return <Step1PreBuildChecklist />;
       case 2:
-        return <Step2WebsitePurpose />;
+        return <Step2AnalyzeDeck />;
       case 3:
-        return <Step3BrandVoice />;
+        return <Step3WebsitePurpose />;
       case 4:
-        return <Step4FillGaps />;
+        return <Step4BrandVoice />;
       case 5:
-        return <Step5HomepageContent />;
+        return <Step5FillGaps />;
       case 6:
-        return <Step6DesignDirection />;
+        return <Step6HomepageContent />;
       case 7:
-        return <Step7SiteStructure />;
+        return <Step7DesignDirection />;
       case 8:
-        return <Step8SpecDocument />;
+        return <Step8SiteStructure />;
       case 9:
-        return <Step9AIPrompt />;
+        return <Step9SpecDocument />;
       case 10:
-        return <Step10NextSteps />;
+        return <Step10Validator />;
+      case 11:
+        return <Step11AIPrompt />;
+      case 12:
+        return <Step12NextSteps />;
       default:
-        return <Step1AnalyzeDeck />;
+        return <Step1PreBuildChecklist />;
     }
   };
 

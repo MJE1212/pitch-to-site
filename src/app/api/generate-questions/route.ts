@@ -1,62 +1,46 @@
-import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
+import { NextResponse } from 'next/server';
 
-export async function POST(request: NextRequest) {
-  try {
-    const { gaps, deckAnalysis } = await request.json();
+// The 5 highest-leverage questions every Tough Tech founder should answer.
+// These are deterministic (no model call) so the wizard always asks them in the same order.
+// IDs are descriptive so the homepage prompt can reference them when needed.
+const MUST_ASK_QUESTIONS = [
+  {
+    id: 'proof_point',
+    question:
+      'What is your single most defensible proof point? (Patent number, DOE/NSF grant name + amount, named pilot partner, published result with full title, awarded prize.)',
+    context:
+      'This is the strongest credibility signal we have for investors. Be specific — not "we have a grant" but "DOE ARPA-E grant, $1.5M, 2024."',
+  },
+  {
+    id: 'why_now',
+    question:
+      "What's the technical breakthrough that makes this possible NOW, that wasn't possible 3 years ago?",
+    context:
+      'Investors need to understand the timing. What changed in the science, the supply chain, the cost curve, or the regulatory environment?',
+  },
+  {
+    id: 'aesthetic_reference',
+    question:
+      'Name 1-2 websites — any company, any industry — that you wish your site looked like.',
+    context:
+      'This calibrates the visual direction better than any color picker. References can be from any sector — what matters is the feel, density, and confidence.',
+  },
+  {
+    id: 'team_relevance',
+    question:
+      'For each team member: their most relevant prior credential for THIS specific problem (not a generic resume — why THEM for this).',
+    context:
+      'Example: "Sarah Chen, Co-founder/CTO — PhD MIT MechE, 8 years SpaceX cryogenic propulsion, 3 patents." Not "Sarah is a results-driven engineer."',
+  },
+  {
+    id: 'do_not_emulate_sites',
+    question:
+      'Name 1–2 specific websites you do NOT want yours to look like (any company, any industry).',
+    context:
+      'Concrete anti-references help us avoid pulling toward the wrong aesthetic. "Not like [insert competitor site URL]" / "Not like Palantir" / "Not your typical [insert industry] corporate site." Skip if you don\'t have strong opinions.',
+  },
+];
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey || apiKey === 'your_api_key_here') {
-      // Demo mode - return default questions
-      return NextResponse.json({
-        questions: [
-          { id: 'q1', question: 'What specific problem does your solution address that existing solutions cannot?', context: 'This helps define your unique value proposition' },
-          { id: 'q2', question: 'What credentials or experience make your team uniquely qualified to solve this problem?', context: 'Builds trust with investors and partners' },
-          { id: 'q3', question: 'Do you have any early traction, pilots, or technical validation?', context: 'Provides credibility signals' },
-        ],
-      });
-    }
-
-    const client = new Anthropic({ apiKey });
-
-    const prompt = `Based on the gaps you identified in the pitch deck, please generate the questions I need to answer to fill them.
-
-Gaps identified: ${JSON.stringify(gaps)}
-
-Focus on the most important gaps first:
-- Anything related to my primary audience and their problems
-- My unique value proposition and differentiators
-- How my product/service actually works
-- Trust and credibility elements
-- Clear calls-to-action
-
-Common questions you might ask:
-- "What is the status quo or state-of-the-art that is not sufficient?"
-- "What's the single most impressive benefit your product delivers?"
-- "What credentials or experience make you the right team for this?"
-- "Do you have any technical/scientific traction, papers, awards, or evidence that your solution is promising?"
-
-Return JSON: {"questions": [{"id": "q1", "question": "...", "context": "Why this matters"}]}`;
-
-    const message = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }],
-    });
-
-    const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-
-    if (!jsonMatch) {
-      throw new Error('Failed to parse response');
-    }
-
-    return NextResponse.json(JSON.parse(jsonMatch[0]));
-  } catch (error) {
-    console.error('Generate questions error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to generate questions' },
-      { status: 500 }
-    );
-  }
+export async function POST() {
+  return NextResponse.json({ questions: MUST_ASK_QUESTIONS });
 }

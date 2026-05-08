@@ -28,7 +28,7 @@ export default function Home() {
             Pitch Deck to Website Builder
           </h1>
           <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
-            Transform your pitch deck into a professional Tough Tech website in 10 guided steps.
+            Transform your pitch deck into a professional Tough Tech website in 12 guided steps.
             Upload your PDF, refine your messaging, and get everything you need to build your new website.
           </p>
         </header>
@@ -36,20 +36,22 @@ export default function Home() {
         {/* How it works */}
         <section className="mb-16">
           <h2 className="text-2xl font-semibold text-black text-center mb-10">
-            The 10-Step Process
+            The 12-Step Process
           </h2>
           <div className="grid md:grid-cols-2 gap-4">
             {[
-              { num: 1, title: 'Upload & Analyze', desc: 'Extract key information from your pitch deck' },
-              { num: 2, title: 'Define Purpose', desc: 'Set your website goals and target audience' },
-              { num: 3, title: 'Brand Voice', desc: 'Nail your one-liner and personality' },
-              { num: 4, title: 'Fill Gaps', desc: 'Answer questions to complete your story' },
-              { num: 5, title: 'Homepage Content', desc: 'Generate compelling copy for every section' },
-              { num: 6, title: 'Design Direction', desc: 'Define colors, fonts, and visual style' },
-              { num: 7, title: 'Site Structure', desc: 'Plan your navigation and sections' },
-              { num: 8, title: 'Spec Document', desc: 'Get a complete website specification' },
-              { num: 9, title: 'AI Prompt', desc: 'Ready-to-use prompt for AI builders' },
-              { num: 10, title: 'Next Steps', desc: 'Export everything and choose your path' },
+              { num: 1, title: 'Pre-build Checklist', desc: 'Gather your build materials before starting' },
+              { num: 2, title: 'Upload & Analyze', desc: 'Extract key information from your pitch deck' },
+              { num: 3, title: 'Define Purpose', desc: 'Set your website goals and target audience' },
+              { num: 4, title: 'Brand Voice', desc: 'Nail your one-liner and personality' },
+              { num: 5, title: 'Fill Gaps', desc: 'Answer questions to complete your story' },
+              { num: 6, title: 'Homepage Content', desc: 'Generate compelling copy for every section' },
+              { num: 7, title: 'Design Direction', desc: 'Define colors, fonts, and visual style' },
+              { num: 8, title: 'Site Structure', desc: 'Plan your navigation and sections' },
+              { num: 9, title: 'Spec Document', desc: 'Get a complete website specification' },
+              { num: 10, title: 'Quality Check', desc: 'Audit copy and design against the Tough Tech rules' },
+              { num: 11, title: 'AI Prompt', desc: 'Ready-to-use prompt for AI builders' },
+              { num: 12, title: 'Next Steps', desc: 'Export everything and choose your path' },
             ].map((step) => (
               <div key={step.num} className="flex items-start gap-4 bg-neutral-50 rounded-lg p-4 border border-neutral-200">
                 <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
