@@ -126,6 +126,14 @@ export default function Step12NextSteps() {
             <div className="text-xs text-neutral-500">Design to code</div>
           </a>
         </div>
+
+        {/* Logo / asset upload tip — covers tool-specific differences */}
+        <div className="mt-4 p-3 bg-white border border-neutral-200 rounded-lg text-xs text-neutral-600">
+          <p className="font-medium text-black mb-1">Logo upload tip</p>
+          <p>
+            Code-output tools (Bolt, Lovable, v0, Cursor, Replit) want your logo dropped into <code className="bg-neutral-100 px-1 py-0.5 rounded">/public/</code> as <code className="bg-neutral-100 px-1 py-0.5 rounded">logo.png</code>. Design-first tools (Figma Make, Framer AI) want it placed into the header frame in their canvas. The generated code already references <code className="bg-neutral-100 px-1 py-0.5 rounded">/logo.png</code>, so the production version works either way.
+          </p>
+        </div>
       </div>
 
       {/* Option B: Developer */}

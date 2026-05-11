@@ -186,7 +186,12 @@ export default function Step11AIPrompt() {
           <li>Go to bolt.new, lovable.dev, or your preferred AI builder</li>
           <li>Paste the prompt and let it generate your site</li>
           <li>
-            <span className="font-medium text-black">Upload your logo manually.</span> AI builders are text-only — they can&apos;t ingest the logo file you uploaded earlier. After the site generates, drag your logo into the builder&apos;s asset panel and rename it <code className="bg-neutral-200 px-1 py-0.5 rounded text-xs">logo.png</code> (the prompt references that exact filename). Do the same for any hero or technology imagery.
+            <span className="font-medium text-black">Upload your logo manually.</span> AI builders are text-only — they can&apos;t ingest the logo file you uploaded earlier. The generated code references <code className="bg-neutral-200 px-1 py-0.5 rounded text-xs">/logo.png</code> as a placeholder. Where you put the actual file depends on the tool:
+            <ul className="mt-1 ml-5 list-disc text-neutral-600 space-y-0.5">
+              <li><span className="font-medium">Code-output tools</span> (Lovable, Bolt, v0, Cursor, Replit, CodeSandbox): drop the logo into the <code className="bg-neutral-200 px-1 py-0.5 rounded text-xs">/public/</code> folder and name it <code className="bg-neutral-200 px-1 py-0.5 rounded text-xs">logo.png</code>.</li>
+              <li><span className="font-medium">Design-first tools</span> (Figma Make, Framer AI): use their image/assets panel AND drag the logo into the header frame on the canvas — the canvas preview needs a real image even though the exported code already has the placeholder.</li>
+            </ul>
+            Repeat the upload for any hero or technology imagery you want in the site.
           </li>
           <li>Iterate with follow-up instructions to refine</li>
         </ol>
