@@ -701,6 +701,14 @@ export default function Step7DesignDirection() {
         <p className="text-neutral-600">{design?.imageryStyle}</p>
       </div>
 
+      {/* High-quality Visuals — static guidance, not generated */}
+      <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-6">
+        <h2 className="text-lg font-semibold text-black mb-3">High-quality Visuals</h2>
+        <p className="text-neutral-600">
+          Add your existing and/or Unsplash or other visual platform-sourced high-quality visuals in Lovable or whatever AI site builder you use with this wireframe builder.
+        </p>
+      </div>
+
       {/* What to Avoid */}
       <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-6">
         <h2 className="text-lg font-semibold text-black mb-3">What to Avoid</h2>

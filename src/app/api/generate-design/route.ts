@@ -262,6 +262,21 @@ Return this exact JSON shape:
       }
     }
 
+    // Always include the AI-generated-visuals rule in the avoid list, regardless of what
+    // the model returned. This is a cohort-wide guideline (we want hero/section imagery
+    // from Unsplash or real photography, not AI-rendered charts that often look uncanny
+    // and read as cheap to investors).
+    if (Array.isArray(design.avoidList)) {
+      const AI_VISUALS_RULE = 'AI-generated charts and other scientific visuals';
+      const alreadyPresent = design.avoidList.some(
+        (item: unknown) =>
+          typeof item === 'string' && item.toLowerCase().includes('ai-generated')
+      );
+      if (!alreadyPresent) {
+        design.avoidList.push(AI_VISUALS_RULE);
+      }
+    }
+
     return NextResponse.json({ design });
   } catch (error) {
     console.error('Generate design error:', error);

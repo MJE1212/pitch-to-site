@@ -25,11 +25,11 @@ export default function Home() {
         {/* Hero */}
         <header className="text-center mb-16">
           <h1 className="text-5xl font-bold text-black mb-4 tracking-tight">
-            Pitch Deck to Website Builder
+            Tough Tech Wireframer
           </h1>
           <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
-            Transform your pitch deck into a professional Tough Tech website in 12 guided steps.
-            Upload your PDF, refine your messaging, and get everything you need to build your new website.
+            Transform your pitch deck into a professional Tough Tech website wireframe in 12 guided steps.
+            Upload your PDF, refine your messaging, and get everything you need to build the foundation of your new website.
           </p>
         </header>
 
@@ -125,7 +125,7 @@ export default function Home() {
         {/* Footer */}
         <footer className="mt-20 text-center text-neutral-400 text-sm max-w-2xl mx-auto">
           <p>
-            No account required. Project state stays in your browser; deck and copy content is analyzed via Anthropic&apos;s Claude API, which{' '}
+            No account required. We will not sell or share your information. The usage analytics are only to help us make the product better. Project state stays in your browser; deck and copy content is analyzed via Anthropic&apos;s Claude API, which{' '}
             <a
               href="https://www.anthropic.com/legal/commercial-terms"
               target="_blank"

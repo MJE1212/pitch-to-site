@@ -62,6 +62,7 @@ export default function Step4BrandVoice() {
   const [newCustomTrait, setNewCustomTrait] = useState('');
 
   const [isRefining, setIsRefining] = useState(false);
+  const [isRefiningFirstImpression, setIsRefiningFirstImpression] = useState(false);
 
   // Update brandVoice when custom traits change
   useEffect(() => {
@@ -124,6 +125,36 @@ export default function Step4BrandVoice() {
       console.error('Failed to refine one-liner:', error);
     } finally {
       setIsRefining(false);
+    }
+  };
+
+  const handleRefineFirstImpression = async () => {
+    if (!brandVoice.desiredFeeling.trim()) return;
+
+    setIsRefiningFirstImpression(true);
+    try {
+      const response = await fetch('/api/refine-first-impression', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          desiredFeeling: brandVoice.desiredFeeling,
+          companyName: project.deckAnalysis?.elements?.companyName?.content,
+          problemStatement: project.deckAnalysis?.elements?.problemStatement?.content,
+          solutionDescription: project.deckAnalysis?.elements?.solutionDescription?.content,
+          personalityTraits: brandVoice.personalityTraits,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.suggestions && data.suggestions.length > 0) {
+          setBrandVoice({ ...brandVoice, desiredFeeling: data.suggestions[0] });
+        }
+      }
+    } catch (error) {
+      console.error('Failed to refine First Impression:', error);
+    } finally {
+      setIsRefiningFirstImpression(false);
     }
   };
 
@@ -286,13 +317,22 @@ export default function Step4BrandVoice() {
         <p className="text-sm text-neutral-500 mb-4">
           What should a visitor feel in the first 5 seconds? One short sentence.
         </p>
-        <textarea
-          value={brandVoice.desiredFeeling}
-          onChange={(e) => setBrandVoice({ ...brandVoice, desiredFeeling: e.target.value })}
-          rows={2}
-          placeholder="e.g., Credible breakthrough. Worth a closer look."
-          className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-lg text-black focus:border-black focus:ring-1 focus:ring-black outline-none resize-none"
-        />
+        <div className="space-y-3">
+          <textarea
+            value={brandVoice.desiredFeeling}
+            onChange={(e) => setBrandVoice({ ...brandVoice, desiredFeeling: e.target.value })}
+            rows={2}
+            placeholder="e.g., Credible breakthrough. Worth a closer look."
+            className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-lg text-black focus:border-black focus:ring-1 focus:ring-black outline-none resize-none"
+          />
+          <button
+            onClick={handleRefineFirstImpression}
+            disabled={isRefiningFirstImpression || !brandVoice.desiredFeeling.trim()}
+            className="text-sm text-[#e31837] hover:text-[#c41530] disabled:text-neutral-400 transition-colors"
+          >
+            {isRefiningFirstImpression ? 'Refining...' : 'Help me refine this'}
+          </button>
+        </div>
       </div>
 
       {/* Actions */}
