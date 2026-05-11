@@ -185,6 +185,9 @@ export default function Step11AIPrompt() {
           <li>Copy the prompt above</li>
           <li>Go to bolt.new, lovable.dev, or your preferred AI builder</li>
           <li>Paste the prompt and let it generate your site</li>
+          <li>
+            <span className="font-medium text-black">Upload your logo manually.</span> AI builders are text-only — they can&apos;t ingest the logo file you uploaded earlier. After the site generates, drag your logo into the builder&apos;s asset panel and rename it <code className="bg-neutral-200 px-1 py-0.5 rounded text-xs">logo.png</code> (the prompt references that exact filename). Do the same for any hero or technology imagery.
+          </li>
           <li>Iterate with follow-up instructions to refine</li>
         </ol>
       </div>

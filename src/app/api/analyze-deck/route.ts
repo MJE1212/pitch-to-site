@@ -128,12 +128,22 @@ export async function POST(request: NextRequest) {
     const analysis = JSON.parse(jsonMatch[0]);
     analysis.rawText = pdfText;
 
-    // Post-process: title-case the company name if the deck has it in all-lowercase.
-    // We deliberately leave ALL-CAPS and mixed-case names alone so brand-correct forms
-    // like "IBM", "OpenAI", or "iPhone" survive untouched.
-    const cn = analysis?.elements?.companyName?.content;
-    if (typeof cn === 'string' && cn.trim() && !/[A-Z]/.test(cn)) {
-      analysis.elements.companyName.content = cn.replace(/\b\w/g, (c: string) => c.toUpperCase());
+    // Post-process the extracted company name in two passes:
+    //   (1) Strip trailing parenthetical content. Claude vision often includes a visual
+    //       interpretation of a stylized logo alongside the canonical name — e.g.
+    //       "Rock Zero (R CK ZERO)" — because the logo replaces the "O" with a graphic.
+    //       Those parenthetical strings are artifacts, not names, and pollute every
+    //       downstream prompt (including the one Lovable uses to invent a logo).
+    //   (2) Title-case the name if it came back fully lowercase, but leave ALL-CAPS and
+    //       mixed-case alone so brand forms like "IBM", "OpenAI", or "iPhone" survive.
+    const rawName = analysis?.elements?.companyName?.content;
+    if (typeof rawName === 'string' && rawName.trim()) {
+      const stripped = rawName.replace(/\s*\([^)]*\)\s*$/, '').trim();
+      const cleaned = stripped || rawName.trim(); // never let cleanup return empty
+      const cased = /[A-Z]/.test(cleaned)
+        ? cleaned
+        : cleaned.replace(/\b\w/g, (c: string) => c.toUpperCase());
+      analysis.elements.companyName.content = cased;
     }
 
     return NextResponse.json({ analysis });

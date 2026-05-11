@@ -66,6 +66,17 @@ This blueprint contains VERBATIM copy. Do not rewrite or paraphrase any quoted t
 - Sans-serif everywhere; gravitas comes from weight and size, not from serifs or ornament
 - SECTION BACKGROUND RHYTHM (required): alternate consecutive section backgrounds between three values — the base background, pure white, and an accent-tinted band (5% accent opacity). NO two adjacent sections may share a background. This rhythm guides the eye down the page and prevents the "all-on-one-cream" wireframe feel.
 
+=== BRAND ASSETS ===
+LOGO HANDLING — read this carefully:
+${designDirection?.logo
+  ? `The founder has already uploaded their actual logo file. They will manually upload it to your project after this prompt is processed. Your job is to set up the markup correctly so the swap is a one-step drop-in.`
+  : `The founder will provide their actual logo file separately. Your job is to set up the markup correctly so the swap is a one-step drop-in.`}
+- Use this exact placeholder in the header: <img src="/logo.png" alt="${companyName}" class="h-8 w-auto" />
+- Also include the same placeholder logo (smaller, white/inverted if needed for contrast) in the footer.
+- DO NOT generate, invent, render, or design a "logo" from the company name — no stylized letterforms, no SVG word-marks, no text-styled "logos". The string "${companyName}" is the COMPANY NAME, not a visual brand mark.
+- If /logo.png is missing at render time, show a neutral text wordmark of the company name in the heading font (no decorative styling, no fake icon next to it). This is a fallback ONLY.
+- Save the company name "${companyName}" exactly as written in the page <title>, in the alt attribute, and anywhere the brand name appears in copy. Do not abbreviate, restyle, or pluralize it.
+
 === NAVIGATION ===
 Sticky header on scroll. Layout: logo left, nav center-right (${siteStructure?.navigationItems?.join(' / ') || 'About / Technology / Team / Contact'}), primary CTA right.
 Primary CTA button text (verbatim): "${homepageContent?.hero?.primaryCTA || websitePurpose?.primaryCTA || 'Contact Us'}"
