@@ -98,6 +98,22 @@ This blueprint contains VERBATIM copy. Do not rewrite or paraphrase any quoted t
 
 ${brandAssetsBlock}
 
+=== IMAGE ASSET SLOTS ===
+The site expects the following image files in the project's asset/files panel (Lovable: Files; Bolt/Cursor/Replit: /public/; Figma Make: image panel + canvas placement). Use these EXACT filenames so the founder can drop images in directly:
+- /hero.jpg — main hero visual (lab photo, technology render, abstract scientific imagery)
+- /technology.jpg — supporting visual for the Breakthrough or How It Works section (optional)
+- /team-1.jpg, /team-2.jpg, /team-3.jpg, ... — one per team member referenced in the TEAM section, headshot-style square or 4:5
+
+UNIVERSAL MISSING-ASSET RULE — applies to every slot above (and to /logo.png from BRAND ASSETS):
+When any of these files is not present at render time, render a VISIBLY BROKEN placeholder in its slot — do NOT silently substitute stock, AI-generated abstract art, or generic icon. The placeholder format:
+- Dashed 2px border in the accent color, rounded corners (rounded-md)
+- A clear filename label centered inside: "ADD /HERO.JPG", "ADD /TEAM-1.JPG", etc., in 12px IBM Plex Mono
+- Background: 5% accent-tinted neutral; foreground: accent color
+- Maintains the slot's intended dimensions (don't shrink to fit the text)
+This is INTENTIONALLY unattractive. The goal is to force the founder to upload real assets before shipping, not let them ship with stock filler.
+
+IF THE FOUNDER WANTS STOCK / AI-GENERATED IMAGERY INSTEAD: they can tell you so in a follow-up prompt ("use a Tough Tech-style hero from Unsplash"). Until they do, default to the broken-placeholder pattern.
+
 === NAVIGATION ===
 Sticky header on scroll. Layout: logo left, nav center-right (${siteStructure?.navigationItems?.join(' / ') || 'About / Technology / Team / Contact'}), primary CTA right.
 Primary CTA button text (verbatim): "${homepageContent?.hero?.primaryCTA || websitePurpose?.primaryCTA || 'Contact Us'}"
@@ -106,7 +122,7 @@ Primary CTA button text (verbatim): "${homepageContent?.hero?.primaryCTA || webs
 Headline (verbatim, do not alter): "${homepageContent?.hero?.headline || companyName}"
 Subhead (verbatim): "${homepageContent?.hero?.subheadline || brandVoice?.oneLiner || ''}" — render at text-2xl REQUIRED (never text-base, text-sm, or text-lg — those read as body copy and weaken the hero) with max-w-2xl and leading-relaxed. On mobile, may step down to text-xl. Never smaller.
 CTA button (verbatim): "${homepageContent?.hero?.primaryCTA || websitePurpose?.primaryCTA || 'Contact Us'}" — accent color background, no border, generous padding (px-8 py-4 minimum)
-Hero visual: use a LAYERED SVG illustration with at least 3 distinct visual layers, gradient fills, and drop shadows. A single-stroke line drawing is FORBIDDEN — that reads as wireframe placeholder. The visual should evoke the technology (e.g., biotech: layered cellular/molecular structures with depth; energy: layered system schematics; materials: layered process imagery; diagnostics: layered signal/biomarker visualizations). NO stock photography. NO isometric people-at-desks. NO AI-generated abstract blobs.
+Hero visual: render <img src="/hero.jpg" alt="${companyName} hero" class="w-full h-full object-cover rounded-lg" /> as the hero image slot. If /hero.jpg is missing at render time, render the broken-placeholder pattern from IMAGE ASSET SLOTS (dashed accent-color border, "ADD /HERO.JPG" label, 5% accent-tinted background) at the same dimensions. DO NOT generate an SVG illustration as a substitute — the founder should see clearly that the asset is missing. NO stock photography. NO isometric people-at-desks. NO AI-generated abstract blobs. (If the founder later asks for a generated hero illustration in a follow-up message, you may produce a layered SVG illustration in the style of the company's technology — but only on explicit request, never as a silent default.)
 Background: solid color or a subtle radial gradient (5–10% accent at center). NO generic linear gradient.
 Above-the-fold rule: hero must read complete without scrolling on a 1280×720 viewport.
 
@@ -139,12 +155,12 @@ ${homepageContent?.howItWorks?.map((s: { step: number; title: string; descriptio
 === SECTION 6 — TEAM ===
 Section label: "05 / TEAM"
 Grid of elevated Card components (shadow-sm). Each card contains:
-  - A circular avatar (top, centered or left): the person's initials in the accent color on a tinted circle background, sized ~64px. This is a placeholder for a real headshot the founder will swap in later.
+  - A square or 4:5 headshot at the top: <img src="/team-N.jpg" alt="[Member name]" class="w-full aspect-square object-cover rounded-md" /> where N is the 1-indexed position of the team member. Member 1 = /team-1.jpg, member 2 = /team-2.jpg, etc. If a team-N.jpg is missing at render time, render the broken-placeholder pattern from IMAGE ASSET SLOTS (dashed accent border, "ADD /TEAM-N.JPG" label) at the same dimensions. DO NOT substitute initials-in-circle, abstract avatar, or AI-generated faces.
   - Name (font-semibold)
   - Title (text-sm, muted)
   - ONE sentence on credentials specific to THIS problem: degree + university + prior employer + patent or paper count.
   - Optional: a small row of prior-employer logos in muted grayscale (only if real and named in source data — do NOT invent).
-Plain text-only cards with hard-edge borders and no avatars are FORBIDDEN. Generic resume bullets ("results-driven engineer with 10 years of experience") are forbidden.
+Plain text-only cards with hard-edge borders and no headshot slots are FORBIDDEN. Generic resume bullets ("results-driven engineer with 10 years of experience") are forbidden.
 Team data from deck: ${deckAnalysis?.elements?.teamInfo?.content || '(no team data provided — leave 3 placeholder cards labeled "TEAM MEMBER — REPLACE WITH REAL BIO")'}
 
 ${specificTrustItems.length > 0
