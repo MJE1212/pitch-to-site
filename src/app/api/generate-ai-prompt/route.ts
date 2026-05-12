@@ -74,7 +74,7 @@ ${designDirection?.logo
 - Use this exact placeholder in the header: <img src="/logo.png" alt="${companyName}" class="h-8 w-auto" />
 - Also include the same placeholder logo (smaller, white/inverted if needed for contrast) in the footer.
 - DO NOT generate, invent, render, or design a "logo" from the company name — no stylized letterforms, no SVG word-marks, no text-styled "logos". The string "${companyName}" is the COMPANY NAME, not a visual brand mark.
-- If /logo.png is missing at render time, show a neutral text wordmark of the company name in the heading font (no decorative styling, no fake icon next to it). This is a fallback ONLY.
+- LOUD FALLBACK when /logo.png is missing at render time: render a VISIBLY BROKEN placeholder so the founder cannot miss it. Use a dashed 2px border, height 40px, width 160px, with the text "ADD LOGO.PNG" centered inside in 12px monospace, accent color. Apply the same broken-placeholder pattern in the footer. This is intentionally unattractive — it forces the founder to upload the real logo before shipping. DO NOT silently substitute a text wordmark.
 - Save the company name "${companyName}" exactly as written in the page <title>, in the alt attribute, and anywhere the brand name appears in copy. Do not abbreviate, restyle, or pluralize it.
 
 === NAVIGATION ===

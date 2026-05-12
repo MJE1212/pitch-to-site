@@ -128,18 +128,25 @@ export async function POST(request: NextRequest) {
     const analysis = JSON.parse(jsonMatch[0]);
     analysis.rawText = pdfText;
 
-    // Post-process the extracted company name in two passes:
+    // Post-process the extracted company name in three passes:
     //   (1) Strip trailing parenthetical content. Claude vision often includes a visual
     //       interpretation of a stylized logo alongside the canonical name — e.g.
     //       "Rock Zero (R CK ZERO)" — because the logo replaces the "O" with a graphic.
-    //       Those parenthetical strings are artifacts, not names, and pollute every
-    //       downstream prompt (including the one Lovable uses to invent a logo).
-    //   (2) Title-case the name if it came back fully lowercase, but leave ALL-CAPS and
+    //   (2) Normalize stylistic periods between two real words. Logos like "Via.Separations"
+    //       use a decorative dot between "Via" and "Separations"; we want the canonical
+    //       "Via Separations" everywhere downstream. The pattern requires 3+ chars on each
+    //       side so it doesn't touch abbreviations ("J.P. Morgan", "U.S. Steel") or
+    //       domain-style names ("Stripe.com" — "com" doesn't start with a capital anyway).
+    //   (3) Title-case the name if it came back fully lowercase, but leave ALL-CAPS and
     //       mixed-case alone so brand forms like "IBM", "OpenAI", or "iPhone" survive.
     const rawName = analysis?.elements?.companyName?.content;
     if (typeof rawName === 'string' && rawName.trim()) {
       const stripped = rawName.replace(/\s*\([^)]*\)\s*$/, '').trim();
-      const cleaned = stripped || rawName.trim(); // never let cleanup return empty
+      const dotNormalized = stripped.replace(
+        /([A-Z][a-z]{2,})\.([A-Z][a-z]{2,})/g,
+        '$1 $2'
+      );
+      const cleaned = dotNormalized || rawName.trim(); // never let cleanup return empty
       const cased = /[A-Z]/.test(cleaned)
         ? cleaned
         : cleaned.replace(/\b\w/g, (c: string) => c.toUpperCase());
