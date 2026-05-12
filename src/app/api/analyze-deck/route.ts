@@ -162,7 +162,10 @@ export async function POST(request: NextRequest) {
     try {
       const message = await client.messages.create({
         model: CLAUDE_MODEL,
-        max_tokens: 2048,
+        // 4096 tokens — large enough that an 11-element extraction PLUS brandColors with
+        // a 6-color palette can't truncate the tool call. 2048 was right at the edge and
+        // Anthropic returned partial tool inputs (empty .elements) when it ran out.
+        max_tokens: 4096,
         tools: [DECK_ANALYSIS_TOOL],
         tool_choice: { type: 'tool', name: 'extract_deck_analysis' },
         messages: [
@@ -189,12 +192,29 @@ export async function POST(request: NextRequest) {
 
       const toolUseBlock = message.content.find((b) => b.type === 'tool_use');
       if (!toolUseBlock || toolUseBlock.type !== 'tool_use') {
+        console.error('[analyze-deck] No tool_use block in response. stop_reason:', message.stop_reason, 'content types:', message.content.map((b) => b.type));
         throw new Error('Claude did not return structured deck analysis.');
       }
       toolInput = toolUseBlock.input;
+
+      // Validate the tool call actually populated elements. If max_tokens was hit mid-call,
+      // Anthropic returns an incomplete input with missing required fields. Fail loudly
+      // here instead of letting the wizard show "Found 0 elements" with no explanation.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const elements = (toolInput as any)?.elements;
+      if (!elements || typeof elements !== 'object' || Object.keys(elements).length === 0) {
+        console.error('[analyze-deck] tool_use input missing or empty .elements. stop_reason:', message.stop_reason, 'input:', JSON.stringify(toolInput).slice(0, 500));
+        throw new Error(
+          message.stop_reason === 'max_tokens'
+            ? 'Deck analysis was truncated. Try a shorter deck or contact support.'
+            : 'Deck analysis came back empty. Please try uploading again.'
+        );
+      }
     } catch (visionError) {
       console.error('Deck analysis failed:', visionError);
-      throw new Error('Could not analyze this PDF. Please try compressing it or using a text-based PDF export.');
+      throw visionError instanceof Error
+        ? visionError
+        : new Error('Could not analyze this PDF. Please try compressing it or using a text-based PDF export.');
     }
 
     // rawText: keep extracted PDF text if any (downstream prompts reference it) or mark
