@@ -421,6 +421,62 @@ export default function Step7DesignDirection() {
         )}
 
 
+        {/* Colors extracted from the deck — diagnostic + manual override.
+            Shows exactly which colors Claude vision saw on the slides, and lets the
+            founder one-click swap any of them into Primary or Accent. Eliminates the
+            "is green missing because it wasn't extracted, or because auto-selection
+            dropped it?" guessing game. */}
+        {(() => {
+          const palette = project.deckAnalysis?.brandColors?.palette;
+          if (!Array.isArray(palette) || palette.length === 0) {
+            return (
+              <div className="mt-8 pt-6 border-t border-neutral-200">
+                <p className="text-sm font-medium text-neutral-700 mb-1">Colors extracted from your deck</p>
+                <p className="text-xs text-neutral-500 italic">
+                  No brand colors detected from the deck — the palette above was generated from your brand description and the Tough Tech defaults. Use the Edit button to set your own.
+                </p>
+              </div>
+            );
+          }
+          return (
+            <div className="mt-8 pt-6 border-t border-neutral-200">
+              <p className="text-sm font-medium text-neutral-700 mb-1">Colors extracted from your deck</p>
+              <p className="text-xs text-neutral-500 mb-3">
+                Claude vision pulled these from your slides. Click any color to use it as Primary or Accent.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {palette.map((color: string, i: number) => (
+                  <div
+                    key={`${color}-${i}`}
+                    className="flex items-center gap-2 px-2 py-1.5 bg-white border border-neutral-300 rounded-lg"
+                  >
+                    <div
+                      className="w-6 h-6 rounded border border-neutral-200 flex-shrink-0"
+                      style={{ backgroundColor: color }}
+                    />
+                    <code className="text-xs text-neutral-700 font-mono">{color}</code>
+                    <button
+                      onClick={() => updateColor('primary', color)}
+                      className="text-xs px-2 py-0.5 bg-neutral-100 hover:bg-black hover:text-white rounded transition-colors"
+                      title="Use as Primary"
+                    >
+                      Primary
+                    </button>
+                    <button
+                      onClick={() => updateColor('accent', color)}
+                      className="text-xs px-2 py-0.5 bg-neutral-100 hover:bg-black hover:text-white rounded transition-colors"
+                      title="Use as Accent"
+                    >
+                      Accent
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
+
         {/* Preview Section */}
         <div className="mt-8 grid md:grid-cols-2 gap-4">
           {/* Dark Preview */}
