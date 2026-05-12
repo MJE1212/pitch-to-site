@@ -8,6 +8,67 @@ import { CLAUDE_MODEL } from '@/lib/model';
 // Vercel's default function timeout is 10s — bump to 60s.
 export const maxDuration = 60;
 
+// Tool-use schema for deck analysis. Forcing Claude to call this tool guarantees structured
+// output and eliminates the entire class of "unescaped quote / newline in string value"
+// JSON.parse failures we'd otherwise hit on free-form JSON responses. Anthropic's API
+// validates the structure on its side.
+const DECK_ELEMENT_SCHEMA = {
+  type: 'object',
+  properties: {
+    status: {
+      type: 'string',
+      enum: ['present', 'partial', 'missing'],
+      description: 'Whether the element was found in the deck.',
+    },
+    content: {
+      type: 'string',
+      description: 'The verbatim extracted text for this element. Omit when status is "missing".',
+    },
+  },
+  required: ['status'],
+} as const;
+
+const DECK_ANALYSIS_TOOL = {
+  name: 'extract_deck_analysis',
+  description:
+    'Extract structured pitch-deck elements (company name, tagline, problem, solution, etc.). For each element, report status and the verbatim extracted content when present.',
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      elements: {
+        type: 'object',
+        properties: {
+          companyName: DECK_ELEMENT_SCHEMA,
+          tagline: DECK_ELEMENT_SCHEMA,
+          problemStatement: DECK_ELEMENT_SCHEMA,
+          solutionDescription: DECK_ELEMENT_SCHEMA,
+          targetAudience: DECK_ELEMENT_SCHEMA,
+          keyFeatures: DECK_ELEMENT_SCHEMA,
+          howItWorks: DECK_ELEMENT_SCHEMA,
+          differentiators: DECK_ELEMENT_SCHEMA,
+          teamInfo: DECK_ELEMENT_SCHEMA,
+          currentStatus: DECK_ELEMENT_SCHEMA,
+          contactInfo: DECK_ELEMENT_SCHEMA,
+        },
+        required: [
+          'companyName',
+          'tagline',
+          'problemStatement',
+          'solutionDescription',
+          'targetAudience',
+          'keyFeatures',
+          'howItWorks',
+          'differentiators',
+          'teamInfo',
+          'currentStatus',
+          'contactInfo',
+        ],
+      },
+    },
+    required: ['elements'],
+  },
+};
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -58,30 +119,37 @@ export async function POST(request: NextRequest) {
     }
 
     const client = new Anthropic({ apiKey });
-    let responseText: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let toolInput: any = null;
 
-    // If we have substantial text, use text-based analysis
+    // If we have substantial text, use text-based analysis; otherwise fall through to vision.
     const hasSubstantialText = pdfText.trim().length > 200;
 
     if (hasSubstantialText) {
-      // Text-based analysis
+      // Text-based analysis with tool-use for guaranteed-valid structured output.
       const message = await client.messages.create({
         model: CLAUDE_MODEL,
         max_tokens: 2048,
+        tools: [DECK_ANALYSIS_TOOL],
+        tool_choice: { type: 'tool', name: 'extract_deck_analysis' },
         messages: [
           {
             role: 'user',
             content: DECK_ANALYSIS_PROMPT + pdfText.slice(0, 20000),
           },
         ],
-      });
-      responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
+
+      const toolUseBlock = message.content.find((b) => b.type === 'tool_use');
+      if (!toolUseBlock || toolUseBlock.type !== 'tool_use') {
+        throw new Error('Claude did not return structured deck analysis.');
+      }
+      toolInput = toolUseBlock.input;
     } else {
-      // Vision-based analysis - send PDF as document.
-      // No artificial size cap here: Vercel's serverless ingress already gates
-      // anything over ~4.5MB (returns FUNCTION_PAYLOAD_TOO_LARGE before we run),
-      // and Anthropic's API accepts up to 32MB per request. Client-side
-      // compression in Step 2 keeps most decks well under either limit.
+      // Vision-based analysis - send PDF as document. Vercel's serverless ingress already
+      // gates anything over ~4.5MB; Anthropic's API accepts up to 32MB per request.
+      // Client-side compression in Step 2 keeps most decks well under either limit.
       console.log('Using document-based analysis for image PDF, size:', buffer.length);
 
       const pdfBase64 = buffer.toString('base64');
@@ -90,6 +158,8 @@ export async function POST(request: NextRequest) {
         const message = await client.messages.create({
           model: CLAUDE_MODEL,
           max_tokens: 2048,
+          tools: [DECK_ANALYSIS_TOOL],
+          tool_choice: { type: 'tool', name: 'extract_deck_analysis' },
           messages: [
             {
               role: 'user',
@@ -109,9 +179,14 @@ export async function POST(request: NextRequest) {
               ],
             },
           ],
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any);
-        responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+
+        const toolUseBlock = message.content.find((b) => b.type === 'tool_use');
+        if (!toolUseBlock || toolUseBlock.type !== 'tool_use') {
+          throw new Error('Claude did not return structured deck analysis.');
+        }
+        toolInput = toolUseBlock.input;
         pdfText = '[Image-based PDF - analyzed via Claude Vision]';
       } catch (visionError) {
         console.error('Vision analysis failed:', visionError);
@@ -119,13 +194,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-
-    if (!jsonMatch) {
-      throw new Error('Failed to parse AI response');
-    }
-
-    const analysis = JSON.parse(jsonMatch[0]);
+    const analysis = toolInput;
     analysis.rawText = pdfText;
 
     // Post-process the extracted company name in three passes:
