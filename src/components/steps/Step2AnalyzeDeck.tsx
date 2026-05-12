@@ -189,7 +189,7 @@ export default function Step2AnalyzeDeck() {
             </div>
 
             <div className="divide-y divide-neutral-200">
-              {Object.entries(analysis.elements).map(([key, element]) => (
+              {Object.entries(analysis.elements || {}).map(([key, element]) => (
                 <div key={key} className="px-6 py-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium text-black">{elementLabels[key] || key}</span>
@@ -209,7 +209,7 @@ export default function Step2AnalyzeDeck() {
           <div className="bg-neutral-100 border border-neutral-200 rounded-lg p-4">
             <p className="text-neutral-700 text-sm">
               {(() => {
-                const elements = Object.values(analysis.elements);
+                const elements = Object.values(analysis.elements || {});
                 const present = elements.filter(e => e.status === 'present').length;
                 const partial = elements.filter(e => e.status === 'partial').length;
                 const missing = elements.filter(e => e.status === 'missing').length;
