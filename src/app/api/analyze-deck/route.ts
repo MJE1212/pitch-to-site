@@ -67,24 +67,24 @@ const DECK_ANALYSIS_TOOL = {
       brandColors: {
         type: 'object',
         description:
-          'Brand colors observed in the deck\'s VISIBLE styling — the company logo, headline text color, recurring accent strokes, button/badge fills, and any consistent slide-background tint. Read the actual pixel colors; do NOT guess based on industry stereotypes (e.g., do not return teal just because the company is in sustainability). Only include this field when the deck is image-based and you can see the slides directly. Skip entirely if you are working from extracted text.',
+          'Brand colors observed across the deck\'s VISIBLE styling. The PDF is attached to this message as a document — you can see the slides directly. Count TOTAL VISUAL AREA covered, not just the logo: slide backgrounds, headline color treatments, recurring section dividers, callout/badge fills, button colors, accent strokes, large iconography. The logo is ONE signal, not the only one. If a color covers large slide areas but appears smaller in the logo, that color is still a brand color and should be included. Read the actual pixel colors; do NOT guess based on industry stereotypes (e.g., do not return teal just because the company is in sustainability). Always populate this field — you have visual access to the deck.',
         properties: {
           primary: {
             type: 'string',
             description:
-              'The single dominant brand color — the one that, if you saw it on a billboard, would make a viewer think of THIS company. Hex code, 6 digits, lowercase OK (e.g., "#0a4d3a"). Pick the one used most prominently in the logo and across slides.',
+              'The single most visually dominant brand color across the deck. Weight by area, not just logo. Hex code, 6 digits, lowercase OK (e.g., "#0a4d3a").',
           },
           accent: {
             type: 'string',
             description:
-              'A secondary brand color used as an accent or highlight (e.g., callout fills, link color, secondary logo element). Hex code. Omit if the deck only uses one brand color.',
+              'A secondary brand color used as an accent or highlight (callout fills, link color, secondary logo element). Hex code. Omit only if the deck genuinely uses one brand color.',
           },
           palette: {
             type: 'array',
             items: { type: 'string' },
             description:
-              'Up to 5 distinct brand-relevant hex codes observed across the deck, including the primary and accent. Exclude pure black (#000000), pure white (#ffffff), and generic grays UNLESS they are intentional brand colors (e.g., a black-on-white deck where black is the brand). Order: most prominent first.',
-            maxItems: 5,
+              'Up to 6 distinct brand-relevant hex codes observed across the deck, INCLUDING the primary and accent. Include EVERY color you see used consistently — if you see green on slide accents AND orange in the logo AND black in headlines, return all three. Better to over-include than miss a brand color. Exclude pure black (#000000), pure white (#ffffff), and generic grays UNLESS they are intentional brand colors. Order: most prominent first.',
+            maxItems: 6,
           },
         },
       },
@@ -146,11 +146,20 @@ export async function POST(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let toolInput: any = null;
 
-    // If we have substantial text, use text-based analysis; otherwise fall through to vision.
-    const hasSubstantialText = pdfText.trim().length > 200;
+    // Unified analysis path: always send the PDF as a vision document so Claude can read
+    // brand colors and visual layout. Append any OCR-extracted text as supplementary
+    // context so Claude can cross-reference layout-heavy or low-contrast slides. This
+    // costs slightly more than the old text-only branch but eliminates the "brandColors
+    // never populated for text-rich decks" failure mode.
+    console.log('Analyzing deck (vision + optional text supplement), PDF size:', buffer.length);
 
-    if (hasSubstantialText) {
-      // Text-based analysis with tool-use for guaranteed-valid structured output.
+    const pdfBase64 = buffer.toString('base64');
+    const hasExtractedText = pdfText.trim().length > 0;
+    const textBlockContent = hasExtractedText
+      ? `${DECK_ANALYSIS_PROMPT}\n\n--- OCR TEXT EXTRACTED FROM THIS PDF (for reference; may have layout artifacts; cross-check against the visible slides) ---\n\n${pdfText.slice(0, 20000)}`
+      : DECK_ANALYSIS_PROMPT;
+
+    try {
       const message = await client.messages.create({
         model: CLAUDE_MODEL,
         max_tokens: 2048,
@@ -159,7 +168,20 @@ export async function POST(request: NextRequest) {
         messages: [
           {
             role: 'user',
-            content: DECK_ANALYSIS_PROMPT + pdfText.slice(0, 20000),
+            content: [
+              {
+                type: 'document',
+                source: {
+                  type: 'base64',
+                  media_type: 'application/pdf',
+                  data: pdfBase64,
+                },
+              },
+              {
+                type: 'text',
+                text: textBlockContent,
+              },
+            ],
           },
         ],
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -170,52 +192,15 @@ export async function POST(request: NextRequest) {
         throw new Error('Claude did not return structured deck analysis.');
       }
       toolInput = toolUseBlock.input;
-    } else {
-      // Vision-based analysis - send PDF as document. Vercel's serverless ingress already
-      // gates anything over ~4.5MB; Anthropic's API accepts up to 32MB per request.
-      // Client-side compression in Step 2 keeps most decks well under either limit.
-      console.log('Using document-based analysis for image PDF, size:', buffer.length);
+    } catch (visionError) {
+      console.error('Deck analysis failed:', visionError);
+      throw new Error('Could not analyze this PDF. Please try compressing it or using a text-based PDF export.');
+    }
 
-      const pdfBase64 = buffer.toString('base64');
-
-      try {
-        const message = await client.messages.create({
-          model: CLAUDE_MODEL,
-          max_tokens: 2048,
-          tools: [DECK_ANALYSIS_TOOL],
-          tool_choice: { type: 'tool', name: 'extract_deck_analysis' },
-          messages: [
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'document',
-                  source: {
-                    type: 'base64',
-                    media_type: 'application/pdf',
-                    data: pdfBase64,
-                  },
-                },
-                {
-                  type: 'text',
-                  text: DECK_ANALYSIS_PROMPT,
-                },
-              ],
-            },
-          ],
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any);
-
-        const toolUseBlock = message.content.find((b) => b.type === 'tool_use');
-        if (!toolUseBlock || toolUseBlock.type !== 'tool_use') {
-          throw new Error('Claude did not return structured deck analysis.');
-        }
-        toolInput = toolUseBlock.input;
-        pdfText = '[Image-based PDF - analyzed via Claude Vision]';
-      } catch (visionError) {
-        console.error('Vision analysis failed:', visionError);
-        throw new Error('Could not analyze this PDF. Please try compressing it or using a text-based PDF export.');
-      }
+    // rawText: keep extracted PDF text if any (downstream prompts reference it) or mark
+    // that vision was the sole source.
+    if (!hasExtractedText) {
+      pdfText = '[Analyzed via Claude Vision]';
     }
 
     const analysis = toolInput;
