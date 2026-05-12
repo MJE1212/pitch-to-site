@@ -225,6 +225,19 @@ Generate the complete React + Tailwind code for this website.`;
     // With API key, we can polish the prompt
     const client = new Anthropic({ apiKey });
 
+    // If the blueprint has an inlined logo data URL, swap it for a short placeholder before
+    // sending to Claude. Otherwise Claude burns most of its max_tokens echoing the base64
+    // string verbatim — slow, expensive, and prone to mid-string truncation. We restore the
+    // real data URL after Claude returns.
+    const blueprint = buildPrompt();
+    const LOGO_DATA_URL_TOKEN = '__PTS_LOGO_DATA_URL_PLACEHOLDER__';
+    let blueprintForClaude = blueprint;
+    let savedLogoDataUrl: string | null = null;
+    if (inlineLogo && logoDataUrl) {
+      savedLogoDataUrl = logoDataUrl;
+      blueprintForClaude = blueprint.split(logoDataUrl).join(LOGO_DATA_URL_TOKEN);
+    }
+
     const prompt = `You are an editor reviewing a Lovable/Bolt blueprint for a pre-seed Tough Tech website. Apply this strict editorial pass to the blueprint below. The user will paste your output directly into Lovable/Bolt — it must be ready to use.
 
 EDITORIAL RULES:
@@ -244,19 +257,26 @@ EDITORIAL RULES:
 
 8. PRESERVE STRUCTURE — keep all section labels (01, 02, 03 …), all design system values (hex codes, fonts), all anti-pattern lists, and the success criterion exactly as written. Do not add or remove sections.
 
+9. PRESERVE PLACEHOLDER TOKENS — if you see the token "${LOGO_DATA_URL_TOKEN}" anywhere in the blueprint, leave it EXACTLY as written. Do not modify, expand, rewrite, or remove it. It will be substituted with binary data after your edits.
+
 OUTPUT: Return ONLY the improved blueprint text, ready to paste into Lovable/Bolt. No preamble, no commentary, no markdown code fence.
 
 BLUEPRINT TO REVIEW AND EDIT:
 
-${buildPrompt()}`;
+${blueprintForClaude}`;
 
     const message = await client.messages.create({
       model: CLAUDE_MODEL,
-      max_tokens: 4096,
+      max_tokens: 8192,
       messages: [{ role: 'user', content: prompt }],
     });
 
-    const responseText = message.content[0].type === 'text' ? message.content[0].text : buildPrompt();
+    let responseText = message.content[0].type === 'text' ? message.content[0].text : blueprint;
+
+    // Restore the inlined logo data URL if we swapped it out before the Claude call.
+    if (savedLogoDataUrl) {
+      responseText = responseText.split(LOGO_DATA_URL_TOKEN).join(savedLogoDataUrl);
+    }
 
     return NextResponse.json({ prompt: responseText });
   } catch (error) {
