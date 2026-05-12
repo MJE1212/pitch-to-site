@@ -19,9 +19,37 @@ export async function POST(request: NextRequest) {
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
 
-    // Extract any color codes from the deck text
+    // Source of truth for deck-derived brand colors. Two stacking sources, in priority order:
+    //   1) deckAnalysis.brandColors — colors Claude vision *saw* on the deck slides
+    //      (only populated for image-based decks; this is the reliable signal).
+    //   2) Hex codes that happen to appear in deckAnalysis.rawText as literal "#RRGGBB"
+    //      strings — rare, only meaningful for text-based decks that include explicit
+    //      brand guidelines text. Greedy regex match.
+    // We dedupe and prioritize so the design generation gets the strongest signal first.
     const rawText = deckAnalysis?.rawText || '';
-    const hexColors = rawText.match(/#[0-9A-Fa-f]{6}\b/g) || [];
+    const rawTextHexColors = rawText.match(/#[0-9A-Fa-f]{6}\b/g) || [];
+    const visualPalette: string[] = Array.isArray(deckAnalysis?.brandColors?.palette)
+      ? deckAnalysis.brandColors.palette.filter((c: unknown): c is string => typeof c === 'string')
+      : [];
+    const visualPrimary: string | undefined = deckAnalysis?.brandColors?.primary;
+    const visualAccent: string | undefined = deckAnalysis?.brandColors?.accent;
+
+    // Combined ordered list, primary first, then accent, then palette extras, then raw-text hex.
+    const orderedColors: string[] = [];
+    const seen = new Set<string>();
+    const pushUnique = (c: string | undefined) => {
+      if (typeof c !== 'string') return;
+      const key = c.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      orderedColors.push(c);
+    };
+    pushUnique(visualPrimary);
+    pushUnique(visualAccent);
+    visualPalette.forEach(pushUnique);
+    rawTextHexColors.forEach(pushUnique);
+
+    const hexColors = orderedColors;
     const hasExistingColors = hexColors.length > 0;
 
     if (!apiKey || apiKey === 'your_api_key_here') {

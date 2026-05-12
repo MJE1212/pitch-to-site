@@ -20,6 +20,16 @@ export interface DeckAnalysis {
     contactInfo: DeckElement;
   };
   rawText: string;
+  /**
+   * Brand colors observed in the deck's visual styling (logo, slide accents, headers).
+   * Only populated when Claude analyzes the deck visually (image-based PDFs). For
+   * text-only extraction this field is omitted because colors aren't visible.
+   */
+  brandColors?: {
+    primary?: string;
+    accent?: string;
+    palette?: string[];
+  };
 }
 
 // Step 2: Website Purpose

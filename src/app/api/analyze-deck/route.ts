@@ -31,7 +31,7 @@ const DECK_ELEMENT_SCHEMA = {
 const DECK_ANALYSIS_TOOL = {
   name: 'extract_deck_analysis',
   description:
-    'Extract structured pitch-deck elements (company name, tagline, problem, solution, etc.). For each element, report status and the verbatim extracted content when present.',
+    'Extract structured pitch-deck elements (company name, tagline, problem, solution, etc.) AND the brand colors visible in the deck. For each element, report status and the verbatim extracted content when present. Populate brandColors only when you can SEE the deck slides visually — leave it out when working from text only.',
   input_schema: {
     type: 'object' as const,
     properties: {
@@ -63,6 +63,30 @@ const DECK_ANALYSIS_TOOL = {
           'currentStatus',
           'contactInfo',
         ],
+      },
+      brandColors: {
+        type: 'object',
+        description:
+          'Brand colors observed in the deck\'s VISIBLE styling — the company logo, headline text color, recurring accent strokes, button/badge fills, and any consistent slide-background tint. Read the actual pixel colors; do NOT guess based on industry stereotypes (e.g., do not return teal just because the company is in sustainability). Only include this field when the deck is image-based and you can see the slides directly. Skip entirely if you are working from extracted text.',
+        properties: {
+          primary: {
+            type: 'string',
+            description:
+              'The single dominant brand color — the one that, if you saw it on a billboard, would make a viewer think of THIS company. Hex code, 6 digits, lowercase OK (e.g., "#0a4d3a"). Pick the one used most prominently in the logo and across slides.',
+          },
+          accent: {
+            type: 'string',
+            description:
+              'A secondary brand color used as an accent or highlight (e.g., callout fills, link color, secondary logo element). Hex code. Omit if the deck only uses one brand color.',
+          },
+          palette: {
+            type: 'array',
+            items: { type: 'string' },
+            description:
+              'Up to 5 distinct brand-relevant hex codes observed across the deck, including the primary and accent. Exclude pure black (#000000), pure white (#ffffff), and generic grays UNLESS they are intentional brand colors (e.g., a black-on-white deck where black is the brand). Order: most prominent first.',
+            maxItems: 5,
+          },
+        },
       },
     },
     required: ['elements'],
