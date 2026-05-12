@@ -36,6 +36,36 @@ export async function POST(request: NextRequest) {
     };
     const specificTrustItems = (homepageContent?.trustElements || []).filter(isSpecificTrustItem);
 
+    // Logo inlining (Option 1) — if the founder's logo is small enough to embed as a
+    // base64 data URL directly in the prompt, do that. Lovable/Bolt/etc. render data URLs
+    // natively, so no separate upload step is required. Threshold ~55K chars on the data
+    // URL string ≈ 40KB raw image. Above that we fall back to the visible-broken-placeholder
+    // path so users still notice the missing logo and upload it manually.
+    const logoDataUrl: string | undefined = designDirection?.logo?.dataUrl;
+    const INLINE_LOGO_MAX_LEN = 55_000;
+    const inlineLogo =
+      typeof logoDataUrl === 'string' &&
+      logoDataUrl.startsWith('data:image/') &&
+      logoDataUrl.length <= INLINE_LOGO_MAX_LEN;
+
+    const brandAssetsBlock = inlineLogo
+      ? `=== BRAND ASSETS ===
+LOGO HANDLING — the founder's actual logo is embedded inline below as a base64 data URL. Use the data URL EXACTLY as written, no modifications. This renders natively in the browser — no file upload step is needed.
+- Header logo (use this EXACT src attribute, including the full data URL): <img src="${logoDataUrl}" alt="${companyName}" class="h-8 w-auto" />
+- Footer: use the same data URL src at smaller dimensions (e.g., class="h-6 w-auto"). If the footer background is dark and the logo doesn't render well, apply CSS filter: invert(1) brightness(2).
+- DO NOT generate, invent, or design any alternative "logo" from the company name — no stylized letterforms, no SVG word-marks, no text-based logos. The data URL above IS the brand mark.
+- Save the company name "${companyName}" exactly as written in the page <title>, in the alt attribute, and anywhere the brand name appears in copy. Do not abbreviate, restyle, or pluralize it.`
+      : `=== BRAND ASSETS ===
+LOGO HANDLING — read this carefully:
+${logoDataUrl
+  ? `The founder uploaded a logo file, but it was too large to embed inline in this prompt. They will manually upload it to your project after this prompt is processed.`
+  : `The founder will provide their actual logo file separately.`}
+- Use this exact placeholder in the header: <img src="/logo.png" alt="${companyName}" class="h-8 w-auto" />
+- Also include the same placeholder logo (smaller, white/inverted if needed for contrast) in the footer.
+- DO NOT generate, invent, render, or design a "logo" from the company name — no stylized letterforms, no SVG word-marks, no text-styled "logos". The string "${companyName}" is the COMPANY NAME, not a visual brand mark.
+- LOUD FALLBACK when /logo.png is missing at render time: render a VISIBLY BROKEN placeholder so the founder cannot miss it. Use a dashed 2px border, height 40px, width 160px, with the text "ADD LOGO.PNG" centered inside in 12px monospace, accent color. Apply the same broken-placeholder pattern in the footer. This is intentionally unattractive — it forces the founder to upload the real logo before shipping. DO NOT silently substitute a text wordmark.
+- Save the company name "${companyName}" exactly as written in the page <title>, in the alt attribute, and anywhere the brand name appears in copy. Do not abbreviate, restyle, or pluralize it.`;
+
     const buildPrompt = () => {
       return `Build a single-page website for ${companyName}, a pre-seed Tough Tech startup.
 
@@ -66,16 +96,7 @@ This blueprint contains VERBATIM copy. Do not rewrite or paraphrase any quoted t
 - Sans-serif everywhere; gravitas comes from weight and size, not from serifs or ornament
 - SECTION BACKGROUND RHYTHM (required): alternate consecutive section backgrounds between three values — the base background, pure white, and an accent-tinted band (5% accent opacity). NO two adjacent sections may share a background. This rhythm guides the eye down the page and prevents the "all-on-one-cream" wireframe feel.
 
-=== BRAND ASSETS ===
-LOGO HANDLING — read this carefully:
-${designDirection?.logo
-  ? `The founder has already uploaded their actual logo file. They will manually upload it to your project after this prompt is processed. Your job is to set up the markup correctly so the swap is a one-step drop-in.`
-  : `The founder will provide their actual logo file separately. Your job is to set up the markup correctly so the swap is a one-step drop-in.`}
-- Use this exact placeholder in the header: <img src="/logo.png" alt="${companyName}" class="h-8 w-auto" />
-- Also include the same placeholder logo (smaller, white/inverted if needed for contrast) in the footer.
-- DO NOT generate, invent, render, or design a "logo" from the company name — no stylized letterforms, no SVG word-marks, no text-styled "logos". The string "${companyName}" is the COMPANY NAME, not a visual brand mark.
-- LOUD FALLBACK when /logo.png is missing at render time: render a VISIBLY BROKEN placeholder so the founder cannot miss it. Use a dashed 2px border, height 40px, width 160px, with the text "ADD LOGO.PNG" centered inside in 12px monospace, accent color. Apply the same broken-placeholder pattern in the footer. This is intentionally unattractive — it forces the founder to upload the real logo before shipping. DO NOT silently substitute a text wordmark.
-- Save the company name "${companyName}" exactly as written in the page <title>, in the alt attribute, and anywhere the brand name appears in copy. Do not abbreviate, restyle, or pluralize it.
+${brandAssetsBlock}
 
 === NAVIGATION ===
 Sticky header on scroll. Layout: logo left, nav center-right (${siteStructure?.navigationItems?.join(' / ') || 'About / Technology / Team / Contact'}), primary CTA right.

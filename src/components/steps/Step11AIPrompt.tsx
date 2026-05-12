@@ -145,18 +145,36 @@ export default function Step11AIPrompt() {
         <p className="text-neutral-600">Copy this prompt and paste it into your AI website builder</p>
       </div>
 
-      {/* Manual-upload warning — repeated here so it's impossible to skip over */}
-      <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 flex items-start gap-3">
-        <svg className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-        <div className="text-sm text-amber-900">
-          <p className="font-semibold mb-1">After pasting this prompt, upload your logo to the AI builder.</p>
-          <p>
-            AI builders are text-only — they can&apos;t read the logo you uploaded in Step 7. Drag your logo into the builder&apos;s asset/files panel and name it <code className="bg-amber-100 px-1 py-0.5 rounded">logo.png</code>. If you don&apos;t, the generated site will show a visible <span className="font-mono">ADD LOGO.PNG</span> placeholder where your brand should be.
-          </p>
+      {/* Logo-handling banner — green success when inlined, amber warning otherwise.
+          Detection: if the prompt contains a data:image/ URL the API has embedded the logo. */}
+      {prompt.includes('data:image/') ? (
+        <div className="bg-green-50 border border-green-300 rounded-lg p-4 flex items-start gap-3">
+          <svg className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="text-sm text-green-900">
+            <p className="font-semibold mb-1">Your logo is embedded in this prompt — no separate upload needed.</p>
+            <p>
+              The logo file you uploaded at Step 7 has been encoded directly into the prompt as a data URL. Lovable, Bolt, and Figma Make all render this natively. Just paste and go.
+            </p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 flex items-start gap-3">
+          <svg className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div className="text-sm text-amber-900">
+            <p className="font-semibold mb-1">After pasting this prompt, upload your logo to the AI builder.</p>
+            <p>
+              {project.designDirection?.logo
+                ? <>Your logo was too large to embed inline (above ~40KB), so it can&apos;t auto-pass through. </>
+                : <>You didn&apos;t upload a logo at Step 7, so the generated site will show a placeholder. </>}
+              Drag your logo into the builder&apos;s asset/files panel and name it <code className="bg-amber-100 px-1 py-0.5 rounded">logo.png</code>. The generated site shows a visible <span className="font-mono">ADD LOGO.PNG</span> placeholder until you do.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Copy Button - Prominent */}
       <div className="flex justify-center">
