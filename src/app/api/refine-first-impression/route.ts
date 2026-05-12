@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { CLAUDE_MODEL } from '@/lib/model';
+import { withClaudeRetry } from '@/lib/anthropic-retry';
 
 // Short Claude call but bump from 10s default for safety.
 export const maxDuration = 60;
@@ -56,11 +57,13 @@ Return JSON only (no markdown fence, no prose):
   "feedback": "Brief feedback on the current First Impression and how to improve it"
 }`;
 
-    const message = await client.messages.create({
-      model: CLAUDE_MODEL,
-      max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }],
-    });
+    const message = await withClaudeRetry(() =>
+      client.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }],
+      })
+    );
 
     const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);

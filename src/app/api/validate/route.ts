@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { CLAUDE_MODEL } from '@/lib/model';
 import { extractJsonObject } from '@/lib/json-extract';
 import { VALIDATOR_RULES, ValidationResult } from '@/lib/validator-rules';
+import { withClaudeRetry } from '@/lib/anthropic-retry';
 
 // 14-rule audit with one Claude call. Bump from 10s default.
 export const maxDuration = 60;
@@ -83,11 +84,13 @@ Return ONLY a JSON object in this exact shape (no prose, no markdown fence, no e
 Include EVERY rule from the checklist (one entry per ruleId, in order). Do NOT add ruleIds that aren't in the checklist.`;
 
     const client = new Anthropic({ apiKey });
-    const message = await client.messages.create({
-      model: CLAUDE_MODEL,
-      max_tokens: 4096,
-      messages: [{ role: 'user', content: prompt }],
-    });
+    const message = await withClaudeRetry(() =>
+      client.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: 4096,
+        messages: [{ role: 'user', content: prompt }],
+      })
+    );
 
     const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
 

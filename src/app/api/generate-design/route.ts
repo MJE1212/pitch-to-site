@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { CLAUDE_MODEL } from '@/lib/model';
 import { extractJsonObject } from '@/lib/json-extract';
+import { withClaudeRetry } from '@/lib/anthropic-retry';
 
 // Brand-guide PDF parsing + design generation can take 20–40s. Bump from 10s default.
 export const maxDuration = 60;
@@ -249,12 +250,14 @@ Return this exact JSON shape:
         ]
       : prompt;
 
-    const message = await client.messages.create({
-      model: CLAUDE_MODEL,
-      max_tokens: 2048,
-      messages: [{ role: 'user', content: messageContent }],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+    const message = await withClaudeRetry(() =>
+      client.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: 2048,
+        messages: [{ role: 'user', content: messageContent }],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any)
+    );
 
     const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
 

@@ -3,6 +3,7 @@ import { parsePDF } from '@/lib/pdf-parser';
 import Anthropic from '@anthropic-ai/sdk';
 import { DECK_ANALYSIS_PROMPT } from '@/lib/ai-prompts';
 import { CLAUDE_MODEL } from '@/lib/model';
+import { withClaudeRetry } from '@/lib/anthropic-retry';
 
 // Vision PDF analysis with Claude Opus can take 30–60s on large image-based decks.
 // Vercel's default function timeout is 10s — bump to 60s.
@@ -160,35 +161,37 @@ export async function POST(request: NextRequest) {
       : DECK_ANALYSIS_PROMPT;
 
     try {
-      const message = await client.messages.create({
-        model: CLAUDE_MODEL,
-        // 4096 tokens — large enough that an 11-element extraction PLUS brandColors with
-        // a 6-color palette can't truncate the tool call. 2048 was right at the edge and
-        // Anthropic returned partial tool inputs (empty .elements) when it ran out.
-        max_tokens: 4096,
-        tools: [DECK_ANALYSIS_TOOL],
-        tool_choice: { type: 'tool', name: 'extract_deck_analysis' },
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'document',
-                source: {
-                  type: 'base64',
-                  media_type: 'application/pdf',
-                  data: pdfBase64,
+      const message = await withClaudeRetry(() =>
+        client.messages.create({
+          model: CLAUDE_MODEL,
+          // 4096 tokens — large enough that an 11-element extraction PLUS brandColors with
+          // a 6-color palette can't truncate the tool call. 2048 was right at the edge and
+          // Anthropic returned partial tool inputs (empty .elements) when it ran out.
+          max_tokens: 4096,
+          tools: [DECK_ANALYSIS_TOOL],
+          tool_choice: { type: 'tool', name: 'extract_deck_analysis' },
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'document',
+                  source: {
+                    type: 'base64',
+                    media_type: 'application/pdf',
+                    data: pdfBase64,
+                  },
                 },
-              },
-              {
-                type: 'text',
-                text: textBlockContent,
-              },
-            ],
-          },
-        ],
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+                {
+                  type: 'text',
+                  text: textBlockContent,
+                },
+              ],
+            },
+          ],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any)
+      );
 
       const toolUseBlock = message.content.find((b) => b.type === 'tool_use');
       if (!toolUseBlock || toolUseBlock.type !== 'tool_use') {
