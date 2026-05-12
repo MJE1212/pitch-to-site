@@ -36,30 +36,12 @@ export async function POST(request: NextRequest) {
     };
     const specificTrustItems = (homepageContent?.trustElements || []).filter(isSpecificTrustItem);
 
-    // Logo inlining (Option 1) — if the founder's logo is small enough to embed as a
-    // base64 data URL directly in the prompt, do that. Lovable/Bolt/etc. render data URLs
-    // natively, so no separate upload step is required. Threshold ~55K chars on the data
-    // URL string ≈ 40KB raw image. Above that we fall back to the visible-broken-placeholder
-    // path so users still notice the missing logo and upload it manually.
-    const logoDataUrl: string | undefined = designDirection?.logo?.dataUrl;
-    const INLINE_LOGO_MAX_LEN = 55_000;
-    const inlineLogo =
-      typeof logoDataUrl === 'string' &&
-      logoDataUrl.startsWith('data:image/') &&
-      logoDataUrl.length <= INLINE_LOGO_MAX_LEN;
-
-    const brandAssetsBlock = inlineLogo
-      ? `=== BRAND ASSETS ===
-LOGO HANDLING — the founder's actual logo is embedded inline below as a base64 data URL. Use the data URL EXACTLY as written, no modifications. This renders natively in the browser — no file upload step is needed.
-- Header logo (use this EXACT src attribute, including the full data URL): <img src="${logoDataUrl}" alt="${companyName}" class="h-8 w-auto" />
-- Footer: use the same data URL src at smaller dimensions (e.g., class="h-6 w-auto"). If the footer background is dark and the logo doesn't render well, apply CSS filter: invert(1) brightness(2).
-- DO NOT generate, invent, or design any alternative "logo" from the company name — no stylized letterforms, no SVG word-marks, no text-based logos. The data URL above IS the brand mark.
-- Save the company name "${companyName}" exactly as written in the page <title>, in the alt attribute, and anywhere the brand name appears in copy. Do not abbreviate, restyle, or pluralize it.`
-      : `=== BRAND ASSETS ===
+    // Logo handling: the founder uploads their logo directly to the AI builder's
+    // asset/files panel (Lovable Files, Bolt /public/, Figma Make image panel) — not
+    // through this app. The prompt sets up the markup so the swap is one-step.
+    const brandAssetsBlock = `=== BRAND ASSETS ===
 LOGO HANDLING — read this carefully:
-${logoDataUrl
-  ? `The founder uploaded a logo file, but it was too large to embed inline in this prompt. They will manually upload it to your project after this prompt is processed.`
-  : `The founder will provide their actual logo file separately.`}
+The founder will upload their logo file directly to your asset/files panel as logo.png. Your job is to set up the markup so the swap is a one-step drop-in.
 - Use this exact placeholder in the header: <img src="/logo.png" alt="${companyName}" class="h-8 w-auto" />
 - Also include the same placeholder logo (smaller, white/inverted if needed for contrast) in the footer.
 - DO NOT generate, invent, render, or design a "logo" from the company name — no stylized letterforms, no SVG word-marks, no text-styled "logos". The string "${companyName}" is the COMPANY NAME, not a visual brand mark.
@@ -225,18 +207,7 @@ Generate the complete React + Tailwind code for this website.`;
     // With API key, we can polish the prompt
     const client = new Anthropic({ apiKey });
 
-    // If the blueprint has an inlined logo data URL, swap it for a short placeholder before
-    // sending to Claude. Otherwise Claude burns most of its max_tokens echoing the base64
-    // string verbatim — slow, expensive, and prone to mid-string truncation. We restore the
-    // real data URL after Claude returns.
     const blueprint = buildPrompt();
-    const LOGO_DATA_URL_TOKEN = '__PTS_LOGO_DATA_URL_PLACEHOLDER__';
-    let blueprintForClaude = blueprint;
-    let savedLogoDataUrl: string | null = null;
-    if (inlineLogo && logoDataUrl) {
-      savedLogoDataUrl = logoDataUrl;
-      blueprintForClaude = blueprint.split(logoDataUrl).join(LOGO_DATA_URL_TOKEN);
-    }
 
     const prompt = `You are an editor reviewing a Lovable/Bolt blueprint for a pre-seed Tough Tech website. Apply this strict editorial pass to the blueprint below. The user will paste your output directly into Lovable/Bolt — it must be ready to use.
 
@@ -257,13 +228,11 @@ EDITORIAL RULES:
 
 8. PRESERVE STRUCTURE — keep all section labels (01, 02, 03 …), all design system values (hex codes, fonts), all anti-pattern lists, and the success criterion exactly as written. Do not add or remove sections.
 
-9. PRESERVE PLACEHOLDER TOKENS — if you see the token "${LOGO_DATA_URL_TOKEN}" anywhere in the blueprint, leave it EXACTLY as written. Do not modify, expand, rewrite, or remove it. It will be substituted with binary data after your edits.
-
 OUTPUT: Return ONLY the improved blueprint text, ready to paste into Lovable/Bolt. No preamble, no commentary, no markdown code fence.
 
 BLUEPRINT TO REVIEW AND EDIT:
 
-${blueprintForClaude}`;
+${blueprint}`;
 
     const message = await client.messages.create({
       model: CLAUDE_MODEL,
@@ -271,12 +240,7 @@ ${blueprintForClaude}`;
       messages: [{ role: 'user', content: prompt }],
     });
 
-    let responseText = message.content[0].type === 'text' ? message.content[0].text : blueprint;
-
-    // Restore the inlined logo data URL if we swapped it out before the Claude call.
-    if (savedLogoDataUrl) {
-      responseText = responseText.split(LOGO_DATA_URL_TOKEN).join(savedLogoDataUrl);
-    }
+    const responseText = message.content[0].type === 'text' ? message.content[0].text : blueprint;
 
     return NextResponse.json({ prompt: responseText });
   } catch (error) {

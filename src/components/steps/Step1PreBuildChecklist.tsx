@@ -17,7 +17,16 @@ interface ChecklistItem {
 
 const CHECKLIST_ITEMS: ChecklistItem[] = [
   { id: 'deck', label: 'Pitch deck', bold: true },
-  { id: 'logo', label: 'Logo (PNG, JPG, or SVG)', bold: true },
+  {
+    id: 'logo',
+    bold: true,
+    render: () => (
+      <>
+        Logo file (PNG, JPG, or SVG)
+        <span className="font-normal text-neutral-600"> — you&apos;ll upload this directly to your AI builder (Lovable, Bolt, etc.) at the final step, not in this app</span>
+      </>
+    ),
+  },
   { id: 'brand-guide', label: 'Brand guide' },
   { id: 'investor-logos', label: 'Investor and funder logos' },
   { id: 'messaging', label: 'Messaging' },

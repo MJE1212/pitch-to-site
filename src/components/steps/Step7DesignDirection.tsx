@@ -130,26 +130,9 @@ export default function Step7DesignDirection() {
     maxFiles: 1,
   });
 
-  // Dropzone for logo upload — image files, stored as a base64 data URL on design.logo.
-  const onLogoDrop = useCallback((accepted: File[], rejected: unknown[]) => {
-    if (rejected.length > 0) return;
-    const file = accepted[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      setDesign((prev) =>
-        prev ? { ...prev, logo: { fileName: file.name, dataUrl } } : prev
-      );
-    };
-    reader.readAsDataURL(file);
-  }, []);
-
-  const { getRootProps: getLogoRootProps, getInputProps: getLogoInputProps, isDragActive: isLogoDragActive } = useDropzone({
-    onDrop: onLogoDrop,
-    accept: { 'image/*': ['.png', '.jpg', '.jpeg', '.svg', '.webp'] },
-    maxFiles: 1,
-  });
+  // Note: logo upload happens directly in the AI builder (Lovable, Bolt, etc.) — not here.
+  // Trying to carry the logo through this app was confusing UX since most logos exceed the
+  // inlineable data-URL threshold anyway. See Step 1 checklist for the user-facing guidance.
 
   const renderBrandGuideDropzone = () => {
     if (isCompressingBrandGuide) {
@@ -638,59 +621,6 @@ export default function Step7DesignDirection() {
                 </div>
               )}
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Logo Upload */}
-      <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-6">
-        <h2 className="text-lg font-semibold text-black mb-4">Logo</h2>
-        {design?.logo ? (
-          <div className="flex items-center gap-4">
-            <div className="w-24 h-24 bg-white rounded-lg border border-neutral-200 flex items-center justify-center p-2">
-              <img
-                src={design.logo.dataUrl}
-                alt="Uploaded logo"
-                className="max-w-full max-h-full object-contain"
-              />
-            </div>
-            <div>
-              <p className="text-black font-medium">{design.logo.fileName}</p>
-              <button
-                onClick={() => {
-                  if (design) {
-                    setDesign({ ...design, logo: undefined });
-                  }
-                }}
-                className="text-sm text-red-600 hover:text-red-700 mt-1"
-              >
-                Remove logo
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div
-            {...getLogoRootProps()}
-            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-              isLogoDragActive
-                ? 'border-[#e31837] bg-red-50'
-                : 'border-neutral-300 hover:border-neutral-400'
-            }`}
-          >
-            <input {...getLogoInputProps()} />
-            <svg className="w-12 h-12 text-neutral-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            {isLogoDragActive ? (
-              <p className="text-[#e31837] font-medium">Drop your logo here</p>
-            ) : (
-              <>
-                <p className="text-neutral-600 mb-1">
-                  <span className="text-[#e31837] font-medium">Click to upload</span> or drag and drop your logo
-                </p>
-                <p className="text-neutral-500 text-sm">PNG, JPG, SVG, or WebP</p>
-              </>
-            )}
           </div>
         )}
       </div>
