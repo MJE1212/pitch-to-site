@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { useProject } from '@/lib/ProjectContext';
 
 // The checklist is advisory: nothing here gates progression.
-// Pitch deck and Logo are emphasized because the wizard literally cannot finish without them
-// (deck is uploaded at Step 2; logo at Step 7's Design Direction).
+// Pitch Deck and Logo are emphasized because the build literally cannot finish without them.
+// We split items into two boxes so it's clear which materials feed THIS app vs. which the
+// founder will hand directly to their AI website builder later.
 interface ChecklistItem {
   id: string;
   // Plain-text label for items without inline links/emphasis. If `render` is provided, it overrides this.
@@ -15,23 +16,21 @@ interface ChecklistItem {
   render?: () => React.ReactNode;
 }
 
-const CHECKLIST_ITEMS: ChecklistItem[] = [
-  { id: 'deck', label: 'Pitch deck', bold: true },
-  {
-    id: 'logo',
-    bold: true,
-    render: () => (
-      <>
-        Logo file (PNG, JPG, or SVG)
-        <span className="font-normal text-neutral-600"> — you&apos;ll upload this directly to your AI builder (Lovable, Bolt, etc.) at the final step, not in this app</span>
-      </>
-    ),
-  },
-  { id: 'brand-guide', label: 'Brand guide' },
+// Box 1 — materials this Wireframer app actually consumes.
+const WIREFRAMER_ITEMS: ChecklistItem[] = [
+  { id: 'deck', label: 'Pitch Deck (required)', bold: true },
+  { id: 'brand-guide', label: 'Brand Guide' },
+  { id: 'reference-sites-like', label: 'Websites you like (up to 3)' },
+  { id: 'reference-sites-dislike', label: "Websites you don't like (up to 3)" },
+];
+
+// Box 2 — materials the founder hands directly to Lovable / Bolt / Figma Make /
+// another AI builder during the build phase. Logo leads since it's the only other
+// strictly required item.
+const AI_BUILDER_ITEMS: ChecklistItem[] = [
+  { id: 'logo', label: 'Logo (PNG, JPG, or SVG)', bold: true },
   { id: 'investor-logos', label: 'Investor and funder logos' },
   { id: 'messaging', label: 'Messaging' },
-  { id: 'reference-sites-like', label: 'Examples of a few relevant websites you like' },
-  { id: 'reference-sites-dislike', label: 'Examples of some websites you do NOT like' },
   { id: 'photos', label: 'Photos of your technology, lab/site and/or other relevant items' },
   {
     id: 'high-quality-photography',
@@ -88,41 +87,56 @@ export default function Step1PreBuildChecklist() {
     nextStep();
   };
 
+  // Single source of truth for how a checklist row renders, so both boxes look identical.
+  const renderItem = (item: ChecklistItem) => {
+    const checked = checkedIds.includes(item.id);
+    return (
+      <li key={item.id}>
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={() => toggle(item.id)}
+            className="mt-1 w-4 h-4 rounded border-neutral-300 cursor-pointer flex-shrink-0"
+          />
+          <span
+            className={`text-neutral-700 ${item.bold ? 'font-semibold text-black' : ''} ${
+              checked ? 'line-through text-neutral-400' : ''
+            }`}
+          >
+            {item.render ? item.render() : item.label}
+          </span>
+        </label>
+      </li>
+    );
+  };
+
   return (
     <div className="space-y-8">
       <div className="text-center">
         <h1 className="text-3xl font-bold text-black mb-3">Step 1: Pre-build Checklist</h1>
         <p className="text-neutral-600 max-w-2xl mx-auto">
           Gather your build materials before starting. All items optional but recommended except for{' '}
-          <strong>Pitch deck</strong> and <strong>Logo</strong>.
+          <strong>Pitch Deck</strong> and <strong>Logo</strong>.
         </p>
       </div>
 
-      <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-6">
-        <ul className="space-y-3">
-          {CHECKLIST_ITEMS.map((item) => {
-            const checked = checkedIds.includes(item.id);
-            return (
-              <li key={item.id}>
-                <label className="flex items-start gap-3 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => toggle(item.id)}
-                    className="mt-1 w-4 h-4 rounded border-neutral-300 cursor-pointer flex-shrink-0"
-                  />
-                  <span
-                    className={`text-neutral-700 ${item.bold ? 'font-semibold text-black' : ''} ${
-                      checked ? 'line-through text-neutral-400' : ''
-                    }`}
-                  >
-                    {item.render ? item.render() : item.label}
-                  </span>
-                </label>
-              </li>
-            );
-          })}
-        </ul>
+      <div className="space-y-6">
+        {/* Box 1 — Materials this Wireframer consumes directly */}
+        <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-6">
+          <h2 className="text-lg font-semibold text-black mb-4">For this Wireframer</h2>
+          <ul className="space-y-3">
+            {WIREFRAMER_ITEMS.map(renderItem)}
+          </ul>
+        </div>
+
+        {/* Box 2 — Materials uploaded directly to the AI builder during the build phase */}
+        <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-6">
+          <h2 className="text-lg font-semibold text-black mb-4">For Lovable or another AI Website Builder Tool</h2>
+          <ul className="space-y-3">
+            {AI_BUILDER_ITEMS.map(renderItem)}
+          </ul>
+        </div>
       </div>
 
       <div className="flex justify-end">
