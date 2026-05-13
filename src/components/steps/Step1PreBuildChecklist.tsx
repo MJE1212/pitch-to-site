@@ -116,8 +116,7 @@ export default function Step1PreBuildChecklist() {
       <div className="text-center">
         <h1 className="text-3xl font-bold text-black mb-3">Step 1: Pre-build Checklist</h1>
         <p className="text-neutral-600 max-w-2xl mx-auto">
-          Gather your build materials before starting. All items optional but recommended except for{' '}
-          <strong>Pitch Deck</strong> and <strong>Logo</strong>.
+          Gather your build materials before starting.
         </p>
       </div>
 
