@@ -152,20 +152,12 @@ export default function Step9SpecDocument() {
         <button onClick={prevStep} className="px-6 py-3 text-neutral-500 hover:text-black transition-colors">
           Back
         </button>
-        <div className="flex gap-3">
-          <button
-            onClick={generateSpec}
-            className="px-6 py-3 border border-neutral-300 text-neutral-600 hover:border-neutral-400 rounded-lg transition-colors"
-          >
-            Regenerate
-          </button>
-          <button
-            onClick={handleContinue}
-            className="px-6 py-3 bg-black hover:bg-neutral-800 text-white font-semibold rounded-lg transition-colors"
-          >
-            Continue to Step 10
-          </button>
-        </div>
+        <button
+          onClick={handleContinue}
+          className="px-6 py-3 bg-black hover:bg-neutral-800 text-white font-semibold rounded-lg transition-colors"
+        >
+          Continue to Step 10
+        </button>
       </div>
     </div>
   );
