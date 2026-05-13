@@ -51,6 +51,10 @@ export default function Step7DesignDirection() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editingColors, setEditingColors] = useState(false);
+  // Per-slot in-progress hex typing state. While the user is typing in a hex text input,
+  // we hold the raw value here so partial inputs render correctly. On blur the entry
+  // gets cleared so the input re-syncs with the canonical design.colorPalette value.
+  const [hexInputs, setHexInputs] = useState<Record<string, string>>({});
   const [editingTypography, setEditingTypography] = useState(false);
   const [useCustomHeadingFont, setUseCustomHeadingFont] = useState(!!project.designDirection?.typography?.customHeadingFont);
   const [useCustomBodyFont, setUseCustomBodyFont] = useState(!!project.designDirection?.typography?.customBodyFont);
@@ -381,42 +385,53 @@ export default function Step7DesignDirection() {
         {/* Edit colors */}
         {editingColors && design && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-            <div>
-              <label className="block text-sm text-neutral-600 mb-1">Primary</label>
-              <input
-                type="color"
-                value={design.colorPalette?.primary || '#1e3a5f'}
-                onChange={(e) => updateColor('primary', e.target.value)}
-                className="w-full h-10 cursor-pointer rounded border border-neutral-300"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-neutral-600 mb-1">Accent</label>
-              <input
-                type="color"
-                value={design.colorPalette?.accent || '#3b82f6'}
-                onChange={(e) => updateColor('accent', e.target.value)}
-                className="w-full h-10 cursor-pointer rounded border border-neutral-300"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-neutral-600 mb-1">Background</label>
-              <input
-                type="color"
-                value={design.colorPalette?.background || '#ffffff'}
-                onChange={(e) => updateColor('background', e.target.value)}
-                className="w-full h-10 cursor-pointer rounded border border-neutral-300"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-neutral-600 mb-1">Text</label>
-              <input
-                type="color"
-                value={design.colorPalette?.text || '#1f2937'}
-                onChange={(e) => updateColor('text', e.target.value)}
-                className="w-full h-10 cursor-pointer rounded border border-neutral-300"
-              />
-            </div>
+            {(
+              [
+                { key: 'primary', label: 'Primary', defaultHex: '#1e3a5f' },
+                { key: 'accent', label: 'Accent', defaultHex: '#3b82f6' },
+                { key: 'background', label: 'Background', defaultHex: '#ffffff' },
+                { key: 'text', label: 'Text', defaultHex: '#1f2937' },
+              ] as const
+            ).map(({ key, label, defaultHex }) => {
+              const designValue = design.colorPalette?.[key] || defaultHex;
+              const inputValue = hexInputs[key] ?? designValue;
+              return (
+                <div key={key}>
+                  <label className="block text-sm text-neutral-600 mb-1">{label}</label>
+                  <input
+                    type="color"
+                    value={designValue}
+                    onChange={(e) => updateColor(key, e.target.value)}
+                    className="w-full h-10 cursor-pointer rounded border border-neutral-300"
+                  />
+                  <input
+                    type="text"
+                    value={inputValue}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setHexInputs((prev) => ({ ...prev, [key]: v }));
+                      // Accept "#XXXXXX" or "XXXXXX" — auto-prepend # for the design state.
+                      const cleaned = v.trim();
+                      if (/^#?[0-9A-Fa-f]{6}$/.test(cleaned)) {
+                        const withHash = cleaned.startsWith('#') ? cleaned : `#${cleaned}`;
+                        updateColor(key, withHash);
+                      }
+                    }}
+                    onBlur={() => {
+                      // Clear in-progress typing so the input re-syncs with design state.
+                      setHexInputs((prev) => {
+                        const next = { ...prev };
+                        delete next[key];
+                        return next;
+                      });
+                    }}
+                    placeholder="#000000"
+                    spellCheck={false}
+                    className="w-full mt-1 px-2 py-1 text-xs font-mono bg-white border border-neutral-300 rounded focus:border-black focus:ring-1 focus:ring-black outline-none"
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
 
