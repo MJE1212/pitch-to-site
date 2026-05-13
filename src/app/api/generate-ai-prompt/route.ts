@@ -168,8 +168,12 @@ Section background: high contrast — either accent color or near-black. Add a S
 
 === FOOTER ===
 Minimal: location placeholder, copyright, ${siteStructure?.footerItems?.join(' / ') || 'Privacy / Contact / LinkedIn'}.
-${websitePurpose?.linkedInUrl ? `LinkedIn: ${websitePurpose.linkedInUrl}` : ''}
-${websitePurpose?.twitterUrl ? `X: ${websitePurpose.twitterUrl}` : ''}
+${websitePurpose?.linkedInUrl
+  ? `- LinkedIn link (footer AND anywhere else on the site that references LinkedIn): render an "in" icon link or "LinkedIn" text link with href="${websitePurpose.linkedInUrl}" and target="_blank" rel="noopener noreferrer". Use this EXACT URL — do NOT replace it with a generic "https://linkedin.com" or "https://linkedin.com/company" link. The URL must resolve to the founder's actual LinkedIn page when clicked.`
+  : '- LinkedIn link: omit (the founder did not provide a LinkedIn URL).'}
+${websitePurpose?.twitterUrl
+  ? `- X/Twitter link (footer AND anywhere else): render an "X" icon link or "X" text link with href="${websitePurpose.twitterUrl}" and target="_blank" rel="noopener noreferrer". Use this EXACT URL — do NOT replace it with a generic "https://x.com" link.`
+  : '- X/Twitter link: omit (the founder did not provide an X URL).'}
 Max 5 links. No newsletter widget unless the founder has a real list.
 
 === ANTI-PATTERNS — DO NOT DO ANY OF THESE ===
