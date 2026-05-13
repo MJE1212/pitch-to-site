@@ -110,7 +110,7 @@ ${designDirection?.referenceWebsites?.map((url: string) => `- ${url}`).join('\n'
 **What to Avoid:**
 ${designDirection?.avoidList?.map((item: string) => `- ${item}`).join('\n') || '- Generic stock photos'}
 
-**Trust Signals to Include:**
+**Confidence Signals to Include:**
 ${designDirection?.trustSignals?.map((item: string) => `- ${item}`).join('\n') || '- Team credentials\n- University affiliations'}
 
 ---

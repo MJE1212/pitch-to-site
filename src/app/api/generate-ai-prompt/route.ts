@@ -110,33 +110,33 @@ Background: solid color or a subtle radial gradient (5–10% accent at center). 
 Above-the-fold rule: hero must read complete without scrolling on a 1280×720 viewport.
 
 === SECTION 2 — PROBLEM ===
-Section label: "01 / THE PROBLEM" (small caps, accent color, letter-spaced 0.1em)
 Headline (verbatim): "${homepageContent?.problem?.header || ''}"
 Body (verbatim): "${homepageContent?.problem?.body || ''}"
 If the body contains a number or stat, render it as a callout to the right or below: large IBM Plex Mono numerals (text-5xl or larger).
+DO NOT render an eyebrow/kicker/overline label above the headline (e.g., no "01 / THE PROBLEM", no "Section 02", no numbered section labels of any kind). The section is delineated by the headline and spacing alone.
 
 === SECTION 3 — THE BREAKTHROUGH ===
-Section label: "02 / THE BREAKTHROUGH"
 Headline (verbatim): "${homepageContent?.solution?.header || ''}"
 Body (verbatim): "${homepageContent?.solution?.body || ''}"
 REQUIRED visual: a 3-node horizontal process diagram below the body. Format: [Input] → [Mechanism] → [Output]. Each node is a Card component with shadow-md, a unique tinted background per node (warm cream → accent-tinted → cool gray, in that order), a numbered badge (01/02/03 in IBM Plex Mono, accent color, top-left of card), and a thin SVG arrow connector between nodes with a draw-on-scroll animation. Plain rectangles with hard-edge arrows are FORBIDDEN — they're the single biggest "wireframe" giveaway. If no specific labels are provided, use generic placeholders like "Substrate / Reaction / Product" and add a comment marker for the user to relabel.
+DO NOT render an eyebrow/kicker label above the section headline. (The numbered badges INSIDE the process-diagram cards above are different — those are fine and required.)
 
 === SECTION 4 — OUTCOMES ===
-Section label: "03 / OUTCOMES"
 Three-column grid of elevated Card components (shadow-sm; hover:shadow-md; hover:-translate-y-1 with smooth transition). Each card contains, from top: a numbered badge (01/02/03 in IBM Plex Mono, accent color), a small icon (use lucide-react), the headline, and the body. Plain text under thin dividers is FORBIDDEN.
+DO NOT render an eyebrow label above the section headline. (Card-internal numbered badges are required and unaffected.)
 ${homepageContent?.benefits?.map((b: { headline: string; description: string }, i: number) =>
   `  Column ${i + 1}: Headline (verbatim) "${b.headline}" / Body (verbatim) "${b.description}"`
 ).join('\n') || '  (No benefits provided — leave 3 placeholder columns)'}
 
 === SECTION 5 — HOW IT WORKS ===
-Section label: "04 / HOW IT WORKS"
 Render as a horizontal step row of elevated Cards OR a vertical timeline (developer's choice based on step count and viewport). Each step has a numbered badge (01/02/03/04 in IBM Plex Mono, accent color), an icon (lucide-react), a verb-led title, and a one-sentence body. Plain text rows under thin dividers are FORBIDDEN.
+DO NOT render an eyebrow label above the section headline. (Step-card numbered badges are required and unaffected.)
 ${homepageContent?.howItWorks?.map((s: { step: number; title: string; description: string }) =>
   `  Step ${s.step}: "${s.title}" — "${s.description}"`
 ).join('\n') || '  (No steps provided)'}
 
 === SECTION 6 — TEAM ===
-Section label: "05 / TEAM"
+DO NOT render an eyebrow label above this section's headline. Use the section's headline copy alone for delineation.
 Grid of elevated Card components (shadow-sm). Each card contains:
   - A square or 4:5 headshot at the top: <img src="/team-N.jpg" alt="[Member name]" class="w-full aspect-square object-cover rounded-md" /> where N is the 1-indexed position of the team member. Member 1 = /team-1.jpg, member 2 = /team-2.jpg, etc. If a team-N.jpg is missing at render time, render the broken-placeholder pattern from IMAGE ASSET SLOTS (dashed accent border, "ADD /TEAM-N.JPG" label) at the same dimensions. DO NOT substitute initials-in-circle, abstract avatar, or AI-generated faces.
   - Name (font-semibold)
@@ -147,20 +147,21 @@ Plain text-only cards with hard-edge borders and no headshot slots are FORBIDDEN
 Team data from deck: ${deckAnalysis?.elements?.teamInfo?.content || '(no team data provided — leave 3 placeholder cards labeled "TEAM MEMBER — REPLACE WITH REAL BIO")'}
 
 ${specificTrustItems.length > 0
-  ? `=== SECTION 7 — TRUST ===
-Section label: "06 / TRUST"
+  ? `=== SECTION 7 — CONFIDENCE SIGNALS ===
+DO NOT render an eyebrow label above this section's headline. Use the section's headline copy alone for delineation.
 Render the following as a row of pull-quotes or a tagged list (NOT a generic logo wall):
 ${specificTrustItems.map((s: string) => `  - ${s}`).join('\n')}
 DO NOT invent investor logos, customer logos, or testimonials. Empty placeholder is preferable to fake content.`
-  : `=== NO TRUST SECTION ===
-The founder has NOT provided specific trust signals (real grants, papers, partners, or named investors). DO NOT render a TRUST section in the output. Specifically:
-- Do NOT include a "06 / TRUST" section label.
+  : `=== NO CONFIDENCE SIGNALS SECTION ===
+The founder has NOT provided specific confidence signals (real grants, papers, partners, or named investors). DO NOT render a Confidence Signals section in the output. Specifically:
+- Do NOT include any section label (numbered or otherwise) for confidence signals.
 - Do NOT include a placeholder section saying "What we'll show here as it lands", "Trust signals coming soon", "To be announced", or any similar copy.
 - Do NOT add a TBD card, an empty grid, or a faint heading suggesting future content.
 - The page MUST flow directly from Section 6 (Team) to Section 8 (Final CTA) with no intervening section, no spacing artifact, and no commented-out block.
-If you find yourself writing copy for a Trust section, STOP and delete that section. The site reads stronger without it.`}
+If you find yourself writing copy for a Confidence Signals section, STOP and delete that section. The site reads stronger without it.`}
 
 === SECTION 8 — FINAL CTA ===
+DO NOT render an eyebrow label above this section's headline.
 Headline (verbatim): "${homepageContent?.finalCTA?.headline || ''}"
 Supporting text (verbatim): "${homepageContent?.finalCTA?.supportingText || ''}"
 Button (verbatim): "${homepageContent?.finalCTA?.buttonText || 'Contact Us'}"
@@ -229,7 +230,7 @@ EDITORIAL RULES:
 
 6. HERO LENGTH — confirm the hero headline is ≤10 words. If longer, rewrite using one of these formulas: outcome+qualifier ("Crop Protection Without Compromise"), category claim ("The 21st century metals company"), input/output staccato ("Rocks in. Lithium out. Zero waste."), contrarian declaration ("Novel superconductors the world actually needs"), capability sentence.
 
-7. TRUST INTEGRITY — the Trust section must NOT invent any investor logo, customer logo, award, or testimonial. If the source data has no trust signals, leave the placeholder block exactly as written ("REPLACE WITH REAL LOGOS WHEN AVAILABLE").
+7. CONFIDENCE-SIGNAL INTEGRITY — the Confidence Signals section must NOT invent any investor logo, customer logo, award, or testimonial. If the source data has no confidence signals, leave the placeholder block exactly as written ("REPLACE WITH REAL LOGOS WHEN AVAILABLE").
 
 8. PRESERVE STRUCTURE — keep all section labels (01, 02, 03 …), all design system values (hex codes, fonts), all anti-pattern lists, and the success criterion exactly as written. Do not add or remove sections.
 

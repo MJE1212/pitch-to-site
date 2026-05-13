@@ -17,7 +17,7 @@ export default function Step8SiteStructure() {
     'Outcomes',
     'How It Works',
     'Team',
-    'Trust',
+    'Confidence Signals',
     'Final CTA',
   ];
 
@@ -32,18 +32,23 @@ export default function Step8SiteStructure() {
   );
 
   // Optional sections the founder can drop if they have no content to put there.
+  // We also accept the legacy 'Trust' value when restoring state from older sessions
+  // that were saved before the rename to 'Confidence Signals'.
   const [includeTeam, setIncludeTeam] = useState<boolean>(
     project.siteStructure ? project.siteStructure.sections.includes('Team') : true
   );
   const [includeTrust, setIncludeTrust] = useState<boolean>(
-    project.siteStructure ? project.siteStructure.sections.includes('Trust') : true
+    project.siteStructure
+      ? project.siteStructure.sections.includes('Confidence Signals') ||
+          project.siteStructure.sections.includes('Trust')
+      : true
   );
 
   const handleContinue = () => {
     // Filter out optional sections the founder dropped.
     const sections = CANONICAL_SECTIONS.filter((s) => {
       if (s === 'Team' && !includeTeam) return false;
-      if (s === 'Trust' && !includeTrust) return false;
+      if (s === 'Confidence Signals' && !includeTrust) return false;
       return true;
     });
 
@@ -102,12 +107,14 @@ export default function Step8SiteStructure() {
       <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-6">
         <h2 className="text-lg font-semibold text-black mb-2">Scroll Sections (Tough Tech standard)</h2>
         <p className="text-sm text-neutral-500 mb-4">
-          The order below is locked. Pre-seed Tough Tech sites win on this exact narrative arc — Hero → Problem → Breakthrough → Outcomes → Team → Trust → CTA. You can drop Team and Trust if you don't yet have content to fill them.
+          The order below is locked. Pre-seed Tough Tech sites win on this exact narrative arc — Hero → Problem → Breakthrough → Outcomes → Team → Confidence Signals → CTA. You can drop Team and Confidence Signals if you don't yet have content to fill them.
         </p>
         <ol className="space-y-2 mb-6">
-          {CANONICAL_SECTIONS.map((section, i) => {
-            const optional = section === 'Team' || section === 'Trust';
-            const dropped = (section === 'Team' && !includeTeam) || (section === 'Trust' && !includeTrust);
+          {CANONICAL_SECTIONS.map((section) => {
+            const optional = section === 'Team' || section === 'Confidence Signals';
+            const dropped =
+              (section === 'Team' && !includeTeam) ||
+              (section === 'Confidence Signals' && !includeTrust);
             return (
               <li
                 key={section}
@@ -116,7 +123,6 @@ export default function Step8SiteStructure() {
                 }`}
               >
                 <span className="flex items-start gap-3">
-                  <span className="font-mono text-xs text-neutral-400 mt-0.5">{String(i + 1).padStart(2, '0')}</span>
                   <span className="flex flex-col">
                     <span className="flex items-center gap-2">
                       <span className={`font-medium ${dropped ? 'line-through text-neutral-400' : 'text-black'}`}>
