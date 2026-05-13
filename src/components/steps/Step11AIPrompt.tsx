@@ -145,20 +145,6 @@ export default function Step11AIPrompt() {
         <p className="text-neutral-600">Copy this prompt and paste it into your AI website builder</p>
       </div>
 
-      {/* Logo upload reminder — always shown, since logos are uploaded directly to
-          the AI builder (Lovable, Bolt, etc.), not through this app. */}
-      <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 flex items-start gap-3">
-        <svg className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-        <div className="text-sm text-amber-900">
-          <p className="font-semibold mb-1">After pasting this prompt, upload your logo to the AI builder.</p>
-          <p>
-            Drag your logo file into the builder&apos;s asset/files panel and name it <code className="bg-amber-100 px-1 py-0.5 rounded">logo.png</code>. The generated code references that exact filename. Until you upload, the site shows a visible <span className="font-mono">ADD LOGO.PNG</span> placeholder where your brand should be — same goes for hero, technology, and team photos using the slots described in the prompt.
-          </p>
-        </div>
-      </div>
-
       {/* Instructions — placed above the Copy button so the workflow reads top-to-bottom */}
       <div className="bg-neutral-100 border border-neutral-200 rounded-lg p-4">
         <h3 className="font-medium text-black mb-2">How to use this prompt:</h3>
