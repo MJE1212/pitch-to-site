@@ -235,15 +235,36 @@ BLUEPRINT TO REVIEW AND EDIT:
 
 ${blueprint}`;
 
-    const message = await withClaudeRetry(() =>
-      client.messages.create({
-        model: CLAUDE_MODEL,
-        max_tokens: 8192,
-        messages: [{ role: 'user', content: prompt }],
-      })
-    );
-
-    const responseText = message.content[0].type === 'text' ? message.content[0].text : blueprint;
+    // The Claude editorial pass is best-effort — it removes banned words, tightens
+    // vague claims, etc. If it fails for ANY reason (Vercel timeout, Anthropic
+    // overload, network blip), we fall back to returning the raw blueprint rather
+    // than blocking the user. The raw blueprint is already a complete, usable
+    // builder prompt; the editorial pass just polishes copy.
+    let responseText: string = blueprint;
+    try {
+      const message = await withClaudeRetry(
+        () =>
+          client.messages.create({
+            model: CLAUDE_MODEL,
+            max_tokens: 8192,
+            messages: [{ role: 'user', content: prompt }],
+          }),
+        // No retries on the editorial pass — at max_tokens=8192 a single call can
+        // already take 40-60s. Adding a retry risks exceeding the function timeout
+        // and serving an HTML error page (which is exactly what the user just hit).
+        0
+      );
+      const claudeText = message.content[0]?.type === 'text' ? message.content[0].text : '';
+      if (claudeText.trim().length > 0) {
+        responseText = claudeText;
+      }
+    } catch (editorialErr) {
+      console.error(
+        '[generate-ai-prompt] Editorial pass failed; returning raw blueprint:',
+        editorialErr instanceof Error ? editorialErr.message : editorialErr
+      );
+      // responseText is already set to the raw blueprint — no further action.
+    }
 
     return NextResponse.json({ prompt: responseText });
   } catch (error) {
